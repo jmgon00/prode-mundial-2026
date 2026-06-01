@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm run start",
+    "startCommand": "npx next start -p 3000",
     "restartPolicyType": "ON_FAILURE"
   }
 }
