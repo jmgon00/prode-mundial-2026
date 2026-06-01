@@ -110,7 +110,7 @@ export default function DashboardPage() {
               ⚽
             </div>
             <div>
-              <p className="font-semibold text-white text-sm leading-tight">Prode Mundial 2026</p>
+              <p className="font-semibold text-white text-sm leading-tight">Prode Mundial 22Recortada</p>
               <p className="text-xs text-zinc-500">@{user?.username}</p>
             </div>
           </div>

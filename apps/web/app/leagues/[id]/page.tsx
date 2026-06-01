@@ -75,7 +75,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     if (navigator.share) {
       navigator.share({
         title: `Unite a ${league.name}`,
-        text: `Te invito al Prode Mundial 2026. Usá el código: ${league.inviteCode}`,
+        text: `Te invito al Prode Mundial 22Recortada. Usá el código: ${league.inviteCode}`,
         url: window.location.origin,
       }).catch(() => {})
     } else {

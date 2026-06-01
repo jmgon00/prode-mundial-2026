@@ -47,7 +47,7 @@ export default function RegisterPage() {
             ⚽
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Prode Mundial</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Prode Mundial 22Recortada</h1>
             <p className="text-emerald-400 font-semibold text-sm tracking-widest uppercase mt-1">2026</p>
           </div>
         </div>

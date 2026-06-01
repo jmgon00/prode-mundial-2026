@@ -15,7 +15,7 @@ const spaceMono = Space_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Prode Mundial 2026',
+  title: 'Prode Mundial 22Recortada',
   description: 'Hacé tus pronósticos del Mundial 2026 con tus amigos',
 }
 
