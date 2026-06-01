@@ -141,6 +141,17 @@ export default function AdminPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-8">
 
+        {/* Sección: Setup inicial */}
+        {stages.length === 0 && (
+          <section className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
+            <div>
+              <h2 className="text-white font-semibold">Setup inicial</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">La base de datos de producción está vacía. Cargá los partidos del Mundial para empezar.</p>
+            </div>
+            <SeedButton onDone={() => adminApi.stages().then(setStages)} />
+          </section>
+        )}
+
         {/* Sección: Etapas */}
         <section className="space-y-3">
           <div>
@@ -204,6 +215,37 @@ export default function AdminPage() {
           </div>
         </section>
       </main>
+    </div>
+  )
+}
+
+function SeedButton({ onDone }: { onDone: () => void }) {
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  async function handleSeed() {
+    setLoading(true)
+    try {
+      const { message } = await adminApi.seedMatches()
+      setMsg(message)
+      onDone()
+    } catch (err: any) {
+      setMsg(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={handleSeed}
+        disabled={loading}
+        className="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-xl transition-all disabled:opacity-50"
+      >
+        {loading ? 'Cargando partidos...' : '⚽ Cargar 104 partidos del Mundial 2026'}
+      </button>
+      {msg && <p className="text-sm text-zinc-400 text-center">{msg}</p>}
     </div>
   )
 }

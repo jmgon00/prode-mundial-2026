@@ -168,6 +168,7 @@ export const adminApi = {
   unlockStage: (stage: string) => api.post<{ message: string }>(`/api/admin/stages/${stage}/unlock`, {}),
   lockStage: (stage: string) => api.post<{ message: string }>(`/api/admin/stages/${stage}/lock`, {}),
   matches: () => api.get<Match[]>('/api/admin/matches'),
+  seedMatches: () => api.post<{ message: string }>('/api/admin/seed-matches', {}),
   setResult: (id: string, homeScore: number, awayScore: number) =>
     api.patch<Match>(`/api/admin/matches/${id}/result`, { homeScore, awayScore }),
   setTeams: (id: string, homeTeam: string, awayTeam: string) =>
