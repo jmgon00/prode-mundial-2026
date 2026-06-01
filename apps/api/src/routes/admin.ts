@@ -132,6 +132,22 @@ router.patch('/matches/:id/teams', requireAuth, requireAdmin, async (req, res, n
   }
 })
 
+// Correr el seed de partidos (solo si no hay partidos)
+router.post('/seed-matches', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const existing = await prisma.match.count()
+    if (existing > 0) {
+      return res.json({ message: `Ya hay ${existing} partidos cargados. Nada que hacer.` })
+    }
+
+    const { seedMatches } = await import('../services/seed-matches')
+    const count = await seedMatches()
+    res.json({ message: `${count} partidos insertados correctamente` })
+  } catch (err) {
+    next(err)
+  }
+})
+
 async function scoreMatch(matchId: string, homeScore: number, awayScore: number) {
   const match = await prisma.match.findUnique({ where: { id: matchId }, select: { stage: true } })
   if (!match) return
