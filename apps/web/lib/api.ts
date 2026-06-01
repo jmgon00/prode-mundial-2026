@@ -173,6 +173,7 @@ export const adminApi = {
     api.patch<Match>(`/api/admin/matches/${id}/result`, { homeScore, awayScore }),
   setTeams: (id: string, homeTeam: string, awayTeam: string) =>
     api.patch<Match>(`/api/admin/matches/${id}/teams`, { homeTeam, awayTeam }),
+  resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
 }
 
 // --- Rankings ---

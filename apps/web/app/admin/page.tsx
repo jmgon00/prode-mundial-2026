@@ -33,6 +33,9 @@ export default function AdminPage() {
   const [claimLoading, setClaimLoading] = useState(false)
   const [claimMsg, setClaimMsg] = useState('')
   const [expandedStage, setExpandedStage] = useState<string | null>('GROUP')
+  const [resetConfirm, setResetConfirm] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMsg, setResetMsg] = useState('')
 
   useEffect(() => {
     if (!isLoading && user?.isAdmin) {
@@ -56,6 +59,23 @@ export default function AdminPage() {
       setClaimMsg(err.message)
     } finally {
       setClaimLoading(false)
+    }
+  }
+
+  async function handleReset() {
+    setResetLoading(true)
+    setResetMsg('')
+    try {
+      const { message } = await adminApi.resetData()
+      setResetMsg(message)
+      setResetConfirm('')
+      const [s, m] = await Promise.all([adminApi.stages(), adminApi.matches()])
+      setStages(s)
+      setMatches(m)
+    } catch (err: any) {
+      setResetMsg(err.message)
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -214,6 +234,35 @@ export default function AdminPage() {
             ))}
           </div>
         </section>
+
+        {/* Sección: Reset de datos */}
+        <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
+          <div>
+            <h2 className="text-white font-semibold">Resetear datos de prueba</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Borra todos los usuarios (excepto vos), ligas, pronósticos y badges. Los 104 partidos quedan intactos.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <input
+              value={resetConfirm}
+              onChange={(e) => setResetConfirm(e.target.value)}
+              placeholder='Escribí "resetear" para confirmar'
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-red-500 outline-none"
+            />
+            <button
+              onClick={handleReset}
+              disabled={resetLoading || resetConfirm !== 'resetear'}
+              className="w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {resetLoading ? 'Reseteando...' : 'Resetear todos los datos'}
+            </button>
+            {resetMsg && (
+              <p className="text-sm text-zinc-400 text-center">{resetMsg}</p>
+            )}
+          </div>
+        </section>
+
       </main>
     </div>
   )

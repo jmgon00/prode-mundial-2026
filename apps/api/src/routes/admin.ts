@@ -132,6 +132,34 @@ router.patch('/matches/:id/teams', requireAuth, requireAdmin, async (req, res, n
   }
 })
 
+// Resetear todos los datos de prueba (mantiene partidos y admin)
+router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    await prisma.$transaction([
+      prisma.badge.deleteMany(),
+      prisma.prediction.deleteMany(),
+      prisma.leagueMember.deleteMany(),
+      prisma.penalty.deleteMany(),
+      prisma.league.deleteMany(),
+      prisma.user.deleteMany({ where: { isAdmin: false } }),
+      prisma.match.updateMany({
+        data: { homeScore: null, awayScore: null, status: 'SCHEDULED' },
+      }),
+      prisma.match.updateMany({
+        where: { stage: { not: 'GROUP' } },
+        data: { isActive: false },
+      }),
+      prisma.match.updateMany({
+        where: { stage: 'GROUP' },
+        data: { isActive: true },
+      }),
+    ])
+    res.json({ message: 'Datos reseteados correctamente. Partidos y admin intactos.' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Correr el seed de partidos (solo si no hay partidos)
 router.post('/seed-matches', requireAuth, requireAdmin, async (_req, res, next) => {
   try {
