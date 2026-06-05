@@ -3,17 +3,14 @@ import { scoreMatch } from './scoring'
 
 const API_BASE = 'https://worldcup26.ir'
 
-interface ApiTeam {
-  id: string
-  name_en: string
-}
-
 interface ApiGame {
   id: string
   home_team_id: string
   away_team_id: string
-  home_score: number | string
-  away_score: number | string
+  home_team_name_en: string
+  away_team_name_en: string
+  home_score: string
+  away_score: string
   local_date: string
   finished: string
   type: string
@@ -90,7 +87,7 @@ function resolveEsName(nameEn: string): string | null {
   return EN_TO_ES[nameEn.toLowerCase().trim()] ?? null
 }
 
-async function apiFetch<T>(path: string): Promise<T> {
+async function apiFetch<T>(path: string, key: string): Promise<T[]> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { Accept: 'application/json' },
     signal: AbortSignal.timeout(10_000),
@@ -98,8 +95,8 @@ async function apiFetch<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(`worldcup26 API error ${res.status} en ${path}`)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = await res.json()
-  // Soporta respuesta directa como array o envuelta en { data: [...] }
-  return (Array.isArray(json) ? json : (json.data ?? json)) as T
+  const data = json[key] ?? json
+  return Array.isArray(data) ? data : []
 }
 
 export interface SyncResult {
@@ -121,24 +118,16 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
   const result: SyncResult = { finished: 0, live: 0, errors: [], timestamp: new Date().toISOString() }
 
   try {
-    const [teams, games] = await Promise.all([
-      apiFetch<ApiTeam[]>('/get/teams'),
-      apiFetch<ApiGame[]>('/get/games'),
-    ])
-
-    const teamMap = new Map(teams.map((t) => [String(t.id), t.name_en]))
+    // Los juegos ya incluyen home_team_name_en / away_team_name_en — no necesitamos /get/teams
+    const games = await apiFetch<ApiGame>('/get/games', 'games')
     const now = new Date()
 
     // Solo fase de grupos — los knockout tienen equipos placeholder en nuestra DB
     const groupGames = games.filter((g) => g.type === 'group')
 
     for (const game of groupGames) {
-      const homeEn = teamMap.get(String(game.home_team_id))
-      const awayEn = teamMap.get(String(game.away_team_id))
-      if (!homeEn || !awayEn) {
-        result.errors.push(`Team ID no encontrado: ${game.home_team_id} / ${game.away_team_id}`)
-        continue
-      }
+      const homeEn = game.home_team_name_en
+      const awayEn = game.away_team_name_en
 
       const homeEs = resolveEsName(homeEn)
       const awayEs = resolveEsName(awayEn)
