@@ -138,20 +138,20 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const finishedCount = matches.filter((m) => m.status === 'FINISHED').length
 
   return (
-    <div className="min-h-screen bg-stadium">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
       {/* Header */}
-      <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
+      <header className="border-b border-sky-100 bg-white/90 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-sky-50 text-zinc-500 hover:text-zinc-900 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-white truncate text-sm">{league.name}</h1>
+            <h1 className="font-bold text-zinc-900 truncate text-sm">{league.name}</h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-zinc-500 flex items-center gap-1">
+              <span className="text-xs text-zinc-400 flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {league.members?.length ?? 0} miembros
               </span>
@@ -159,9 +159,9 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
           </div>
           <button
             onClick={copyCode}
-            className="flex items-center gap-1.5 text-xs font-mono bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1.5 rounded-lg text-zinc-300 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-mono bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1.5 rounded-lg text-sky-700 transition-colors"
           >
-            {codeCopied ? <Check className="h-3 w-3 text-sky-400" /> : <Copy className="h-3 w-3" />}
+            {codeCopied ? <Check className="h-3 w-3 text-sky-500" /> : <Copy className="h-3 w-3" />}
             {league.inviteCode}
           </button>
         </div>
@@ -169,18 +169,18 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
       <Tabs defaultValue="matches" className="flex flex-col">
         <div className="max-w-lg mx-auto w-full px-4">
-          <TabsList className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-1 mt-4 h-auto">
-            <TabsTrigger value="matches" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 transition-all">
+          <TabsList className="w-full bg-white border border-sky-100 shadow-sm rounded-xl p-1 mt-4 h-auto">
+            <TabsTrigger value="matches" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-sky-500 data-[state=active]:text-white text-zinc-500 transition-all">
               Partidos
-              {scheduledCount > 0 && <span className="ml-1.5 text-xs bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded-full font-mono">{scheduledCount}</span>}
+              {scheduledCount > 0 && <span className="ml-1.5 text-xs bg-sky-500/20 text-sky-600 px-1.5 py-0.5 rounded-full font-mono">{scheduledCount}</span>}
             </TabsTrigger>
-            <TabsTrigger value="ranking" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 transition-all">
+            <TabsTrigger value="ranking" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-sky-500 data-[state=active]:text-white text-zinc-500 transition-all">
               Ranking
-              {ranking.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full font-mono">{ranking.length}</span>}
+              {ranking.length > 0 && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full font-mono">{ranking.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="penalties" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 transition-all">
+            <TabsTrigger value="penalties" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-sky-500 data-[state=active]:text-white text-zinc-500 transition-all">
               Penitencias
-              {league.penalties?.length > 0 && <span className="ml-1.5 text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-mono">{league.penalties.length}</span>}
+              {league.penalties?.length > 0 && <span className="ml-1.5 text-xs bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded-full font-mono">{league.penalties.length}</span>}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -209,17 +209,17 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                     )}>
                       {STAGE_LABELS[stage]}
                     </span>
-                    <span className="text-xs text-zinc-600">{stageMatches.length} partidos</span>
+                    <span className="text-xs text-zinc-400">{stageMatches.length} partidos</span>
                   </div>
 
                   {stage === 'GROUP' ? (
                     Object.entries(groupsByLetter).map(([letter, groupMatches]) => (
                       <div key={letter} className="space-y-2">
                         <div className="flex items-center gap-2 px-1">
-                          <div className="w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                            <span className="text-xs font-bold text-zinc-400">{letter}</span>
+                          <div className="w-6 h-6 rounded-md bg-sky-100 border border-sky-200 flex items-center justify-center">
+                            <span className="text-xs font-bold text-sky-700">{letter}</span>
                           </div>
-                          <span className="text-xs text-zinc-600">Grupo {letter}</span>
+                          <span className="text-xs text-zinc-400">Grupo {letter}</span>
                         </div>
                         {groupMatches.map((match) => (
                           <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBet={funBets.get(match.id)} onSaveFunBet={saveFunBet} />
@@ -243,40 +243,40 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
             {/* Stats personales */}
             {stats && (
-              <div className="bg-zinc-900/70 border border-white/8 rounded-xl p-4 space-y-3">
+              <div className="bg-white border border-sky-100 shadow-sm rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-white font-semibold text-sm">Tus stats</p>
+                  <p className="text-zinc-900 font-semibold text-sm">Tus stats</p>
                   <button
                     onClick={handleShare}
-                    className="flex items-center gap-1.5 text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-lg transition-all"
+                    className="flex items-center gap-1.5 text-xs bg-sky-100 hover:bg-sky-200 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg transition-all"
                   >
                     📲 Compartir
                   </button>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-white">{stats.rank}°</span>
+                  <span className="text-3xl font-bold text-zinc-900">{stats.rank}°</span>
                   <span className="text-zinc-500 text-sm">de {stats.totalMembers}</span>
-                  <span className="text-amber-400 font-bold ml-auto">{stats.totalPoints} pts</span>
+                  <span className="text-amber-600 font-bold ml-auto">{stats.totalPoints} pts</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
-                  <div className="bg-sky-500/8 border border-sky-500/15 rounded-lg p-2">
+                  <div className="bg-sky-50 border border-sky-200 rounded-lg p-2">
                     <p className="text-base">🎯</p>
-                    <p className="text-sky-400 font-bold text-sm">{stats.exact}</p>
+                    <p className="text-sky-700 font-bold text-sm">{stats.exact}</p>
                     <p className="text-zinc-500 text-xs">exactos</p>
                   </div>
-                  <div className="bg-blue-500/8 border border-blue-500/15 rounded-lg p-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                     <p className="text-base">✅</p>
-                    <p className="text-blue-400 font-bold text-sm">{stats.accuracy}%</p>
+                    <p className="text-blue-700 font-bold text-sm">{stats.accuracy}%</p>
                     <p className="text-zinc-500 text-xs">aciertos</p>
                   </div>
-                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-lg p-2">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
                     <p className="text-base">🔥</p>
-                    <p className="text-amber-400 font-bold text-sm">{stats.bestStreak}</p>
+                    <p className="text-amber-700 font-bold text-sm">{stats.bestStreak}</p>
                     <p className="text-zinc-500 text-xs">racha</p>
                   </div>
-                  <div className="bg-zinc-800/50 border border-white/6 rounded-lg p-2">
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-2">
                     <p className="text-base">📝</p>
-                    <p className="text-zinc-300 font-bold text-sm">{stats.predictionsCount}</p>
+                    <p className="text-zinc-700 font-bold text-sm">{stats.predictionsCount}</p>
                     <p className="text-zinc-500 text-xs">pronóst.</p>
                   </div>
                 </div>
@@ -298,10 +298,10 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                     key={entry.userId}
                     className={cn(
                       'rounded-xl border transition-all',
-                      idx === 0 && 'bg-amber-500/8 border-amber-400/40 shadow-md shadow-amber-900/25',
-                      idx === 1 && 'bg-slate-400/5 border-slate-400/30 shadow-sm shadow-slate-900/20',
-                      idx === 2 && 'bg-orange-600/5 border-orange-600/30',
-                      idx > 2 && 'bg-zinc-900/60 border-white/6',
+                      idx === 0 && 'bg-amber-50 border-amber-200 shadow-md shadow-amber-100',
+                      idx === 1 && 'bg-slate-50 border-slate-200 shadow-sm',
+                      idx === 2 && 'bg-orange-50 border-orange-200',
+                      idx > 2 && 'bg-white border-zinc-100 shadow-sm',
                     )}
                   >
                     <div className="flex items-center gap-3 px-4 py-3">
@@ -313,19 +313,19 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           {entry.avatarUrl && <span className="text-base leading-none">{entry.avatarUrl}</span>}
-                          <p className="font-semibold text-white text-sm truncate">{entry.username}</p>
-                          {entry.userId === user?.id && <span className="text-xs text-zinc-600">(vos)</span>}
+                          <p className="font-semibold text-zinc-900 text-sm truncate">{entry.username}</p>
+                          {entry.userId === user?.id && <span className="text-xs text-zinc-400">(vos)</span>}
                         </div>
                         {entry.role === 'OWNER' && (
-                          <p className="text-xs text-sky-500 mt-0.5">Organizador</p>
+                          <p className="text-xs text-sky-600 mt-0.5">Organizador</p>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <Trophy className="h-3.5 w-3.5 text-amber-400" />
                         <span className={cn(
                           'font-bold text-sm',
-                          idx === 0 && 'text-amber-400',
-                          idx > 0 && 'text-zinc-300',
+                          idx === 0 && 'text-amber-600',
+                          idx > 0 && 'text-zinc-700',
                         )}>
                           {entry.totalPoints} pts
                         </span>
@@ -338,7 +338,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                           const meta = BADGE_META[type]
                           return (
                             <span key={type} title={meta?.label}
-                              className="flex items-center gap-1 text-xs bg-zinc-800 border border-zinc-700 px-2 py-0.5 rounded-full text-zinc-300"
+                              className="flex items-center gap-1 text-xs bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-full text-zinc-700"
                             >
                               {meta?.emoji}
                               <span className="text-zinc-400">{meta?.label}</span>
@@ -641,12 +641,12 @@ function MatchCard({
   return (
     <div className={cn(
       'rounded-xl overflow-hidden transition-all',
-      match.status === 'FINISHED' && 'bg-zinc-900/60 border border-white/6',
-      match.status === 'LIVE'     && 'bg-zinc-900/70 border border-red-500/40 shadow-md shadow-red-900/20',
-      match.status === 'SCHEDULED' && 'bg-zinc-900/70 border border-white/8 hover:border-sky-500/25 hover:shadow-md hover:shadow-sky-900/15',
+      match.status === 'FINISHED'  && 'bg-white border border-zinc-100 shadow-sm',
+      match.status === 'LIVE'      && 'bg-white border border-red-200 shadow-md shadow-red-100',
+      match.status === 'SCHEDULED' && 'bg-white border border-sky-100 shadow-sm hover:border-sky-300 hover:shadow-md hover:shadow-sky-100',
     )}>
       {/* Header de la tarjeta */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-100 bg-zinc-50/50">
         <span className="text-xs text-zinc-500">{formatDate(match.matchDate)}</span>
         {match.status === 'FINISHED' && (
           <span className="text-xs text-zinc-600 uppercase tracking-wide font-medium">Finalizado</span>
@@ -673,16 +673,16 @@ function MatchCard({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2">
           {/* Equipo local */}
-          <span className="flex-1 text-right font-semibold text-sm text-white truncate">
+          <span className="flex-1 text-right font-semibold text-sm text-zinc-900 truncate">
             {match.homeTeam}
           </span>
 
           {/* Marcador / Inputs */}
           {match.status === 'FINISHED' ? (
-            <div className="flex items-center gap-1 bg-zinc-800 rounded-lg px-3 py-1.5 flex-shrink-0">
-              <span className="font-bold text-lg text-white w-5 text-center">{match.homeScore}</span>
-              <span className="text-zinc-600 font-bold">–</span>
-              <span className="font-bold text-lg text-white w-5 text-center">{match.awayScore}</span>
+            <div className="flex items-center gap-1 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5 flex-shrink-0">
+              <span className="font-bold text-lg text-zinc-900 w-5 text-center">{match.homeScore}</span>
+              <span className="text-zinc-400 font-bold">–</span>
+              <span className="font-bold text-lg text-zinc-900 w-5 text-center">{match.awayScore}</span>
             </div>
           ) : (
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -694,10 +694,10 @@ function MatchCard({
                 onChange={(e) => setHome(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
-                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-12 h-10 text-center p-0 text-base font-bold bg-sky-50 border-sky-200 focus:border-sky-400 text-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 placeholder="–"
               />
-              <span className="text-zinc-600 font-bold text-sm">:</span>
+              <span className="text-zinc-400 font-bold text-sm">:</span>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -706,14 +706,14 @@ function MatchCard({
                 onChange={(e) => setAway(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
-                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-12 h-10 text-center p-0 text-base font-bold bg-sky-50 border-sky-200 focus:border-sky-400 text-zinc-900 disabled:opacity-40 disabled:cursor-not-allowed"
                 placeholder="–"
               />
             </div>
           )}
 
           {/* Equipo visitante */}
-          <span className="flex-1 font-semibold text-sm text-white truncate">
+          <span className="flex-1 font-semibold text-sm text-zinc-900 truncate">
             {match.awayTeam}
           </span>
         </div>
@@ -740,7 +740,7 @@ function MatchCard({
       </div>
 
       {/* Apuesta loca */}
-      <div className="border-t border-white/5 px-4 py-3 space-y-2">
+      <div className="border-t border-zinc-100 px-4 py-3 space-y-2">
         <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">🎲 Apuesta loca</p>
         {canPredict ? (
           <div className="flex gap-2">
@@ -751,7 +751,7 @@ function MatchCard({
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveFunBet() }}
               placeholder="Ej: habrá 3 expulsados, habrá penal..."
               maxLength={300}
-              className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-sky-500/50 focus:outline-none transition-colors"
+              className="flex-1 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-sky-400 focus:outline-none transition-colors"
             />
             <button
               onClick={handleSaveFunBet}
@@ -767,15 +767,15 @@ function MatchCard({
             </button>
           </div>
         ) : funBetText ? (
-          <p className="text-xs text-zinc-400 italic">"{funBetText}"</p>
+          <p className="text-xs text-zinc-600 italic">"{funBetText}"</p>
         ) : (
-          <p className="text-xs text-zinc-600 italic">No apostaste nada raro</p>
+          <p className="text-xs text-zinc-400 italic">No apostaste nada raro</p>
         )}
       </div>
 
       {/* Panel apuestas locas de todos (solo cuando FINISHED) */}
       {match.status === 'FINISHED' && (
-        <div className="border-t border-white/5">
+        <div className="border-t border-zinc-100">
           <button
             onClick={toggleFunBetReveals}
             disabled={loadingFunBetReveals}
@@ -791,7 +791,7 @@ function MatchCard({
                 funBetReveals.map((fb) => (
                   <div key={fb.userId} className={cn(
                     'flex items-start gap-2 rounded-lg px-2.5 py-2 text-xs',
-                    fb.userId === currentUserId ? 'bg-sky-500/10 border border-sky-500/20' : 'bg-white/3',
+                    fb.userId === currentUserId ? 'bg-sky-500/10 border border-sky-500/20' : 'bg-zinc-50',
                   )}>
                     <span className="text-base leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
                     <div className="flex-1 min-w-0">
@@ -810,7 +810,7 @@ function MatchCard({
 
       {/* Panel pronósticos de rivales */}
       {match.status === 'FINISHED' && (
-        <div className="border-t border-white/5">
+        <div className="border-t border-zinc-100">
           <button
             onClick={toggleRivals}
             disabled={loadingRivals}
@@ -833,7 +833,7 @@ function MatchCard({
                     'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs',
                     r.userId === currentUserId
                       ? 'bg-sky-500/10 border border-sky-500/20'
-                      : 'bg-white/3',
+                      : 'bg-zinc-50',
                   )}>
                     <span className="w-5 flex-shrink-0 text-center">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-zinc-600">{i + 1}</span>}
