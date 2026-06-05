@@ -116,7 +116,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="font-black uppercase tracking-[0.1em] text-white text-sm leading-none">Prode Mundial</p>
-              <p className="text-amber-400 font-bold text-xs tracking-[0.2em] uppercase leading-tight">2026 · @{user?.username}</p>
+              <p className="text-amber-400 font-bold text-xs tracking-[0.3em] uppercase leading-tight">2026</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -131,9 +131,13 @@ export default function DashboardPage() {
             )}
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800"
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800"
             >
-              <UserCog className="h-3.5 w-3.5" />
+              {user?.avatarUrl
+                ? <span className="text-base leading-none">{user.avatarUrl}</span>
+                : <UserCog className="h-3.5 w-3.5" />
+              }
+              <span className="font-medium">@{user?.username}</span>
             </button>
             <button
               onClick={() => { logout(); router.replace('/login') }}
