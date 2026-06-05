@@ -44,6 +44,39 @@ router.post('/', requireAuth, async (req: AuthRequest, res, next) => {
   }
 })
 
+// Pronósticos de todos para un partido (solo disponible cuando el partido terminó)
+router.get('/match/:matchId/league/:leagueId', requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const { matchId, leagueId } = req.params
+    const userId = req.userId!
+
+    const isMember = await prisma.leagueMember.findUnique({
+      where: { leagueId_userId: { leagueId, userId } },
+    })
+    if (!isMember) throw new AppError(403, 'No sos miembro de esta liga')
+
+    const match = await prisma.match.findUnique({ where: { id: matchId }, select: { status: true } })
+    if (!match) throw new AppError(404, 'Partido no encontrado')
+    if (match.status !== 'FINISHED') throw new AppError(400, 'El partido aún no terminó')
+
+    const predictions = await prisma.prediction.findMany({
+      where: { matchId, leagueId },
+      include: { user: { select: { id: true, username: true } } },
+      orderBy: [{ pointsEarned: 'desc' }, { createdAt: 'asc' }],
+    })
+
+    res.json(predictions.map((p) => ({
+      userId: p.userId,
+      username: p.user.username,
+      predictedHomeScore: p.predictedHomeScore,
+      predictedAwayScore: p.predictedAwayScore,
+      pointsEarned: p.pointsEarned ?? 0,
+    })))
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Predicciones del usuario en una liga
 router.get('/league/:leagueId', requireAuth, async (req: AuthRequest, res, next) => {
   try {

@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
 import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, BADGE_META } from '@/lib/api'
-import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry } from '@/lib/api'
+import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Copy, Check, Trophy, Users } from 'lucide-react'
@@ -199,13 +199,13 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                           <span className="text-xs text-zinc-600">Grupo {letter}</span>
                         </div>
                         {groupMatches.map((match) => (
-                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} />
+                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} />
                         ))}
                       </div>
                     ))
                   ) : (
                     stageMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} />
+                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} />
                     ))
                   )}
                 </div>
@@ -502,18 +502,32 @@ function useCountdown(targetDate: string) {
 }
 
 function MatchCard({
-  match,
-  prediction,
-  onSave,
+  match, prediction, onSave, leagueId, currentUserId,
 }: {
   match: Match
   prediction?: Prediction
   onSave: (matchId: string, home: number, away: number) => void
+  leagueId: string
+  currentUserId: string
 }) {
   const [home, setHome] = useState(prediction?.predictedHomeScore?.toString() ?? '')
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
   const canPredict = match.status === 'SCHEDULED' && new Date() < new Date(match.matchDate)
   const { label: countdown, urgency } = useCountdown(match.matchDate)
+  const [showRivals, setShowRivals] = useState(false)
+  const [rivals, setRivals] = useState<MatchPrediction[] | null>(null)
+  const [loadingRivals, setLoadingRivals] = useState(false)
+
+  async function toggleRivals() {
+    if (rivals !== null) { setShowRivals((v) => !v); return }
+    setLoadingRivals(true)
+    try {
+      const data = await predictionApi.byMatch(match.id, leagueId)
+      setRivals(data)
+      setShowRivals(true)
+    } catch { /* silently ignore */ }
+    finally { setLoadingRivals(false) }
+  }
 
   function handleBlur() {
     const h = parseInt(home)
@@ -624,6 +638,60 @@ function MatchCard({
           </div>
         )}
       </div>
+
+      {/* Panel pronósticos de rivales */}
+      {match.status === 'FINISHED' && (
+        <div className="border-t border-white/5">
+          <button
+            onClick={toggleRivals}
+            disabled={loadingRivals}
+            className="w-full text-xs text-zinc-600 hover:text-zinc-400 py-2 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            {loadingRivals
+              ? 'Cargando...'
+              : showRivals
+              ? '▲ Ocultar pronósticos'
+              : '▼ Ver pronósticos de todos'}
+          </button>
+
+          {showRivals && rivals && (
+            <div className="pb-3 px-3 space-y-1">
+              {rivals.length === 0 ? (
+                <p className="text-zinc-600 text-xs text-center py-2">Nadie pronosticó este partido</p>
+              ) : (
+                rivals.map((r, i) => (
+                  <div key={r.userId} className={cn(
+                    'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs',
+                    r.userId === currentUserId
+                      ? 'bg-emerald-500/10 border border-emerald-500/20'
+                      : 'bg-white/3',
+                  )}>
+                    <span className="w-5 flex-shrink-0 text-center">
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-zinc-600">{i + 1}</span>}
+                    </span>
+                    <span className={cn('flex-1 font-medium truncate', r.userId === currentUserId ? 'text-emerald-300' : 'text-zinc-300')}>
+                      {r.username}
+                      {r.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
+                    </span>
+                    <span className="font-mono text-zinc-400 flex-shrink-0">
+                      {r.predictedHomeScore} – {r.predictedAwayScore}
+                    </span>
+                    <span className={cn(
+                      'font-bold flex-shrink-0 w-12 text-right',
+                      r.pointsEarned === 3 && 'text-emerald-400',
+                      r.pointsEarned === 2 && 'text-blue-400',
+                      r.pointsEarned === 1 && 'text-amber-400',
+                      r.pointsEarned === 0 && 'text-zinc-600',
+                    )}>
+                      {r.pointsEarned > 0 ? `+${r.pointsEarned}` : '0'} pts
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

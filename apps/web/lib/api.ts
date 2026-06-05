@@ -98,11 +98,17 @@ export interface Match {
   status: 'SCHEDULED' | 'LIVE' | 'FINISHED'
 }
 
+export interface MatchSummary {
+  next: Match | null
+  recent: Match[]
+}
+
 export const matchApi = {
   list: (params?: { stage?: string; status?: string }) => {
     const qs = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
     return api.get<Match[]>(`/api/matches${qs}`)
   },
+  summary: () => api.get<MatchSummary>('/api/matches/summary'),
 }
 
 // --- Predictions ---
@@ -116,6 +122,14 @@ export interface Prediction {
   match?: Match
 }
 
+export interface MatchPrediction {
+  userId: string
+  username: string
+  predictedHomeScore: number
+  predictedAwayScore: number
+  pointsEarned: number
+}
+
 export const predictionApi = {
   upsert: (data: {
     matchId: string
@@ -125,6 +139,8 @@ export const predictionApi = {
   }) => api.post<Prediction>('/api/predictions', data),
   listByLeague: (leagueId: string) =>
     api.get<Prediction[]>(`/api/predictions/league/${leagueId}`),
+  byMatch: (matchId: string, leagueId: string) =>
+    api.get<MatchPrediction[]>(`/api/predictions/match/${matchId}/league/${leagueId}`),
 }
 
 // --- Users ---

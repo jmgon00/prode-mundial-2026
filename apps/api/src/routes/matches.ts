@@ -24,6 +24,27 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 })
 
+// Resumen para el dashboard: próximo partido + últimos resultados
+router.get('/summary', requireAuth, async (_req, res, next) => {
+  try {
+    const now = new Date()
+    const [next, recent] = await Promise.all([
+      prisma.match.findFirst({
+        where: { isActive: true, status: 'SCHEDULED', matchDate: { gte: now } },
+        orderBy: { matchDate: 'asc' },
+      }),
+      prisma.match.findMany({
+        where: { status: 'FINISHED' },
+        orderBy: { matchDate: 'desc' },
+        take: 3,
+      }),
+    ])
+    res.json({ next: next ?? null, recent })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Actualizar resultado (solo admin/sistema — simplificado para MVP)
 const resultSchema = z.object({
   homeScore: z.number().int().min(0),

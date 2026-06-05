@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { leagueApi, userApi, League } from '@/lib/api'
+import { leagueApi, userApi, matchApi, League, Match, MatchSummary } from '@/lib/api'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const { logout } = useAuth()
   const router = useRouter()
   const [leagues, setLeagues] = useState<League[]>([])
+  const [summary, setSummary] = useState<MatchSummary | null>(null)
   const [fetching, setFetching] = useState(true)
 
   const [profileOpen, setProfileOpen] = useState(false)
@@ -39,7 +40,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      leagueApi.list().then(setLeagues).finally(() => setFetching(false))
+      Promise.all([leagueApi.list(), matchApi.summary()])
+        .then(([l, s]) => { setLeagues(l); setSummary(s) })
+        .finally(() => setFetching(false))
     }
   }, [user, isLoading])
 
@@ -141,6 +144,40 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-safe">
+
+        {/* Próximo partido */}
+        {summary?.next && (
+          <div className="bg-emerald-500/8 border border-emerald-500/25 rounded-xl px-4 py-3 space-y-1">
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Próximo partido</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-bold text-white text-sm">
+                {summary.next.homeTeam} <span className="text-zinc-500 font-normal">vs</span> {summary.next.awayTeam}
+              </p>
+              <span className="text-xs text-zinc-400 flex-shrink-0">
+                {new Date(summary.next.matchDate).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Últimos resultados */}
+        {summary && summary.recent.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Últimos resultados</p>
+            <div className="space-y-1.5">
+              {summary.recent.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 bg-zinc-900/60 border border-white/6 rounded-lg px-3 py-2">
+                  <span className="flex-1 text-right text-sm font-semibold text-white truncate">{m.homeTeam}</span>
+                  <span className="bg-zinc-800 text-white font-bold text-sm px-2.5 py-0.5 rounded-md flex-shrink-0 font-mono">
+                    {m.homeScore} – {m.awayScore}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold text-white truncate">{m.awayTeam}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Acciones */}
         <div className="grid grid-cols-2 gap-3">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -279,10 +316,14 @@ export default function DashboardPage() {
                       <Users className="h-3 w-3" />
                       {league.members?.length ?? 0} miembro{(league.members?.length ?? 0) !== 1 ? 's' : ''}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-zinc-600 font-mono">
-                      <Hash className="h-3 w-3" />
-                      {league.inviteCode}
-                    </span>
+                    {(() => {
+                      const me = league.members?.find((m) => m.userId === user!.id)
+                      if (!me) return null
+                      const rank = (league.members?.filter((m) => m.totalPoints > me.totalPoints).length ?? 0) + 1
+                      return me.totalPoints > 0 ? (
+                        <span className="text-xs text-amber-400 font-semibold">{rank}° · {me.totalPoints} pts</span>
+                      ) : null
+                    })()}
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors flex-shrink-0" />
