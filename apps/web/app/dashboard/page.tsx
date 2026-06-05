@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { LogOut, Plus, Users, Trophy, ChevronRight, Hash, ShieldCheck, UserCog } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
   const { user, isLoading } = useProtected()
@@ -338,9 +339,12 @@ export default function DashboardPage() {
   )
 }
 
+const AVATARS = ['⚽','🏆','🥇','🦁','🐯','🦊','🦅','🔥','⚡','🌟','🎯','👑','🐲','💪','🏅','🦾','🎭','🤺','🧨','🎪']
+
 function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, login, token } = useAuth()
   const [username, setUsername] = useState(user?.username ?? '')
+  const [avatar, setAvatar] = useState(user?.avatarUrl ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
@@ -356,6 +360,7 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
       const payload: any = {}
       if (username !== user?.username) payload.username = username
       if (newPassword) { payload.currentPassword = currentPassword; payload.newPassword = newPassword }
+      if (avatar !== (user?.avatarUrl ?? '')) payload.avatar = avatar
       if (!Object.keys(payload).length) { setError('No hay cambios para guardar'); setLoading(false); return }
 
       const { user: updated } = await userApi.updateMe(payload)
@@ -379,6 +384,19 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
           <DialogTitle className="text-white">Mi perfil</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-2">
+            <Label className="text-zinc-300 text-sm">Avatar</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {AVATARS.map((emoji) => (
+                <button key={emoji} type="button" onClick={() => setAvatar(avatar === emoji ? '' : emoji)}
+                  className={cn('w-9 h-9 text-lg flex items-center justify-center rounded-lg transition-all',
+                    avatar === emoji ? 'bg-emerald-500/20 border border-emerald-500/50 scale-110' : 'bg-zinc-800 hover:bg-zinc-700 border border-transparent'
+                  )}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label className="text-zinc-300 text-sm">Email</Label>
             <p className="text-sm text-zinc-500 bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-2">{user?.email}</p>

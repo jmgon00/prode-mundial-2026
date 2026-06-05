@@ -37,6 +37,7 @@ export interface AuthUser {
   email: string
   username: string
   isAdmin: boolean
+  avatarUrl?: string | null
 }
 
 export const authApi = {
@@ -145,8 +146,27 @@ export const predictionApi = {
 
 // --- Users ---
 export const userApi = {
-  updateMe: (data: { username?: string; currentPassword?: string; newPassword?: string }) =>
+  updateMe: (data: { username?: string; currentPassword?: string; newPassword?: string; avatar?: string }) =>
     api.patch<{ user: AuthUser }>('/api/users/me', data),
+}
+
+// --- Stats ---
+export interface UserStats {
+  totalPoints: number
+  rank: number
+  totalMembers: number
+  predictionsCount: number
+  finishedCount: number
+  exact: number
+  good: number
+  winner: number
+  miss: number
+  accuracy: number
+  bestStreak: number
+}
+
+export const statsApi = {
+  league: (leagueId: string) => api.get<UserStats>(`/api/stats/league/${leagueId}`),
 }
 
 // --- Badges ---

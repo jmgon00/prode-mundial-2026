@@ -3,8 +3,8 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, BADGE_META } from '@/lib/api'
-import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction } from '@/lib/api'
+import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, BADGE_META } from '@/lib/api'
+import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Copy, Check, Trophy, Users } from 'lucide-react'
@@ -44,6 +44,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [badges, setBadges] = useState<BadgeEntry[]>([])
   const [fetching, setFetching] = useState(true)
   const [codeCopied, setCodeCopied] = useState(false)
+  const [stats, setStats] = useState<UserStats | null>(null)
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -53,15 +54,27 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         predictionApi.listByLeague(id),
         rankingApi.get(id),
         badgeApi.listByLeague(id),
-      ]).then(([l, m, preds, r, b]) => {
+        statsApi.league(id),
+      ]).then(([l, m, preds, r, b, s]) => {
         setLeague(l)
         setMatches(m)
         setPredictions(new Map(preds.map((p) => [p.matchId, p])))
         setRanking(r)
         setBadges(b)
+        setStats(s)
       }).finally(() => setFetching(false))
     }
   }, [user, isLoading, id])
+
+  function handleShare() {
+    if (!stats || !league) return
+    const text = `Estoy en el puesto ${stats.rank}° con ${stats.totalPoints} pts en la liga "${league.name}" del Prode Mundial 2026 ⚽🏆\nUníte con el código: ${league.inviteCode}\n${window.location.origin}`
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {})
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  }
 
   async function savePrediction(matchId: string, home: number, away: number) {
     try {
@@ -216,9 +229,53 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
         {/* Tab Ranking */}
         <TabsContent value="ranking" className="mt-0">
-          <div className="max-w-lg mx-auto px-4 py-4 space-y-2 pb-safe">
+          <div className="max-w-lg mx-auto px-4 py-4 space-y-3 pb-safe">
+
+            {/* Stats personales */}
+            {stats && (
+              <div className="bg-zinc-900/70 border border-white/8 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-semibold text-sm">Tus stats</p>
+                  <button
+                    onClick={handleShare}
+                    className="flex items-center gap-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all"
+                  >
+                    📲 Compartir
+                  </button>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-white">{stats.rank}°</span>
+                  <span className="text-zinc-500 text-sm">de {stats.totalMembers}</span>
+                  <span className="text-amber-400 font-bold ml-auto">{stats.totalPoints} pts</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-lg p-2">
+                    <p className="text-base">🎯</p>
+                    <p className="text-emerald-400 font-bold text-sm">{stats.exact}</p>
+                    <p className="text-zinc-500 text-xs">exactos</p>
+                  </div>
+                  <div className="bg-blue-500/8 border border-blue-500/15 rounded-lg p-2">
+                    <p className="text-base">✅</p>
+                    <p className="text-blue-400 font-bold text-sm">{stats.accuracy}%</p>
+                    <p className="text-zinc-500 text-xs">aciertos</p>
+                  </div>
+                  <div className="bg-amber-500/8 border border-amber-500/15 rounded-lg p-2">
+                    <p className="text-base">🔥</p>
+                    <p className="text-amber-400 font-bold text-sm">{stats.bestStreak}</p>
+                    <p className="text-zinc-500 text-xs">racha</p>
+                  </div>
+                  <div className="bg-zinc-800/50 border border-white/6 rounded-lg p-2">
+                    <p className="text-base">📝</p>
+                    <p className="text-zinc-300 font-bold text-sm">{stats.predictionsCount}</p>
+                    <p className="text-zinc-500 text-xs">pronóst.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Lista ranking */}
             {ranking.length === 0 ? (
-              <div className="text-center py-20">
+              <div className="text-center py-16">
                 <p className="text-4xl mb-3">🏆</p>
                 <p className="text-zinc-400">El ranking aparece cuando haya partidos finalizados</p>
               </div>
@@ -237,16 +294,20 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                       idx > 2 && 'bg-zinc-900/60 border-white/6',
                     )}
                   >
-                    <div className="flex items-center gap-4 px-4 py-3">
+                    <div className="flex items-center gap-3 px-4 py-3">
                       <span className="text-xl w-8 text-center flex-shrink-0">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (
                           <span className="text-sm font-bold text-zinc-500">{idx + 1}</span>
                         )}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-white text-sm truncate">{entry.username}</p>
+                        <div className="flex items-center gap-1.5">
+                          {entry.avatarUrl && <span className="text-base leading-none">{entry.avatarUrl}</span>}
+                          <p className="font-semibold text-white text-sm truncate">{entry.username}</p>
+                          {entry.userId === user?.id && <span className="text-xs text-zinc-600">(vos)</span>}
+                        </div>
                         {entry.role === 'OWNER' && (
-                          <p className="text-xs text-emerald-500">Organizador</p>
+                          <p className="text-xs text-emerald-500 mt-0.5">Organizador</p>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">

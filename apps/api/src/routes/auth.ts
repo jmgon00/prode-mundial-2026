@@ -32,7 +32,7 @@ router.post('/register', async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, 10)
     const user = await prisma.user.create({
       data: { email, username, passwordHash },
-      select: { id: true, email: true, username: true, isAdmin: true },
+      select: { id: true, email: true, username: true, isAdmin: true, avatarUrl: true },
     })
 
     const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
@@ -60,7 +60,7 @@ router.post('/login', async (req, res, next) => {
     })
 
     res.json({
-      user: { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin },
+      user: { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin, avatarUrl: user.avatarUrl },
       token,
     })
   } catch (err) {
@@ -72,7 +72,7 @@ router.get('/me', requireAuth, async (req: any, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, username: true, isAdmin: true },
+      select: { id: true, email: true, username: true, isAdmin: true, avatarUrl: true },
     })
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
     res.json({ user })

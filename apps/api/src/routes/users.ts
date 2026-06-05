@@ -11,11 +11,12 @@ const updateSchema = z.object({
   username: z.string().min(3).max(20).optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6).optional(),
+  avatar: z.string().max(10).optional(),
 })
 
 router.patch('/me', requireAuth, async (req: any, res, next) => {
   try {
-    const { username, currentPassword, newPassword } = updateSchema.parse(req.body)
+    const { username, currentPassword, newPassword, avatar } = updateSchema.parse(req.body)
 
     const user = await prisma.user.findUnique({ where: { id: req.userId } })
     if (!user) throw new AppError(404, 'Usuario no encontrado')
@@ -36,8 +37,9 @@ router.patch('/me', requireAuth, async (req: any, res, next) => {
       data: {
         ...(username ? { username } : {}),
         ...(newPassword ? { passwordHash: await bcrypt.hash(newPassword, 10) } : {}),
+        ...(avatar !== undefined ? { avatarUrl: avatar || null } : {}),
       },
-      select: { id: true, email: true, username: true, isAdmin: true },
+      select: { id: true, email: true, username: true, isAdmin: true, avatarUrl: true },
     })
 
     res.json({ user: updated })
