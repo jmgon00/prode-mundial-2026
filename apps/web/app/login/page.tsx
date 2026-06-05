@@ -8,6 +8,7 @@ import { authApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { WorldCupLogo } from '@/components/WorldCupLogo'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -40,13 +41,17 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-5xl shadow-lg shadow-emerald-500/10">
-            ⚽
+        <div className="text-center space-y-4">
+          <div className="flex justify-center drop-shadow-[0_0_18px_rgba(234,179,8,0.4)]">
+            <WorldCupLogo size={96} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Prode Mundial 22Recortada</h1>
-            <p className="text-emerald-400 font-semibold text-sm tracking-widest uppercase mt-1">2026</p>
+            <h1 className="text-4xl font-black uppercase tracking-[0.12em] text-white leading-none">
+              Prode Mundial
+            </h1>
+            <p className="text-amber-400 font-bold text-lg tracking-[0.35em] uppercase mt-2">
+              2026
+            </p>
           </div>
         </div>
 

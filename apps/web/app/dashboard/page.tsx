@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
 import { leagueApi, userApi, matchApi, League, Match, MatchSummary } from '@/lib/api'
+import { WorldCupLogo } from '@/components/WorldCupLogo'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -109,13 +110,13 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lg">
-              ⚽
+          <div className="flex items-center gap-2.5">
+            <div className="drop-shadow-[0_0_6px_rgba(234,179,8,0.5)]">
+              <WorldCupLogo size={32} />
             </div>
             <div>
-              <p className="font-semibold text-white text-sm leading-tight">Prode Mundial 22Recortada</p>
-              <p className="text-xs text-zinc-500">@{user?.username}</p>
+              <p className="font-black uppercase tracking-[0.1em] text-white text-sm leading-none">Prode Mundial</p>
+              <p className="text-amber-400 font-bold text-xs tracking-[0.2em] uppercase leading-tight">2026 · @{user?.username}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
