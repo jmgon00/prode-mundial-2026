@@ -184,13 +184,70 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Acciones */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Mis ligas */}
+        {leagues.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Mis ligas</p>
+            {leagues.map((league) => {
+              const me = league.members?.find((m) => m.userId === user!.id)
+              const myPoints = me?.totalPoints ?? 0
+              const myRank = (league.members?.filter((m) => m.totalPoints > myPoints).length ?? 0) + 1
+              const memberCount = league.members?.length ?? 0
+              return (
+                <button
+                  key={league.id}
+                  onClick={() => router.push(`/leagues/${league.id}`)}
+                  className="w-full bg-zinc-900/80 border border-white/8 hover:border-sky-500/30 rounded-2xl p-5 flex flex-col gap-3 transition-all active:scale-[0.98] text-left group hover:shadow-lg hover:shadow-sky-900/20"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-bold text-white text-base leading-tight">{league.name}</p>
+                    <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-sky-400 transition-colors flex-shrink-0 mt-0.5" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {myPoints > 0 ? (
+                      <>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl font-black text-white leading-none">{myRank}°</span>
+                          <span className="text-zinc-500 text-sm">de {memberCount}</span>
+                        </div>
+                        <div className="w-px h-7 bg-white/10" />
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-amber-400 leading-none">{myPoints}</span>
+                          <span className="text-zinc-500 text-xs">pts</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-zinc-600 text-sm">Sin partidos jugados aún</span>
+                    )}
+                    <span className="ml-auto flex items-center gap-1 text-xs text-zinc-600">
+                      <Users className="h-3 w-3" />
+                      {memberCount}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Estado vacío */}
+        {leagues.length === 0 && (
+          <div className="text-center py-16 space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800/80 text-4xl">🏆</div>
+            <div>
+              <p className="text-white font-semibold">Todavía no estás en ninguna liga</p>
+              <p className="text-zinc-500 text-sm mt-1">Creá una o pedile el código a un amigo</p>
+            </div>
+          </div>
+        )}
+
+        {/* Acciones secundarias */}
+        <div className="flex gap-3">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm px-4 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/30 active:scale-[0.97]">
-                <Plus className="h-4 w-4" />
-                Crear liga
+              <button className="flex-1 flex items-center justify-center gap-1.5 border border-white/10 hover:border-sky-500/40 text-zinc-400 hover:text-sky-300 text-sm font-medium py-2.5 rounded-xl transition-all active:scale-[0.97]">
+                <Plus className="h-3.5 w-3.5" />
+                Nueva liga
               </button>
             </DialogTrigger>
             <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-h-[90vh] overflow-y-auto">
@@ -264,8 +321,8 @@ export default function DashboardPage() {
 
           <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm px-4 py-3 rounded-xl transition-all border border-zinc-700 active:scale-[0.97]">
-                <Users className="h-4 w-4" />
+              <button className="flex-1 flex items-center justify-center gap-1.5 border border-white/10 hover:border-sky-500/40 text-zinc-400 hover:text-sky-300 text-sm font-medium py-2.5 rounded-xl transition-all active:scale-[0.97]">
+                <Users className="h-3.5 w-3.5" />
                 Unirse
               </button>
             </DialogTrigger>
@@ -294,49 +351,6 @@ export default function DashboardPage() {
           </Dialog>
         </div>
 
-        {/* Lista de ligas */}
-        {leagues.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 text-4xl mb-4">
-              🏆
-            </div>
-            <p className="text-white font-medium">Todavía no estás en ninguna liga</p>
-            <p className="text-zinc-500 text-sm mt-1">Creá una o pedile el código a un amigo</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Mis ligas</p>
-            {leagues.map((league) => (
-              <button
-                key={league.id}
-                onClick={() => router.push(`/leagues/${league.id}`)}
-                className="w-full bg-zinc-900/70 hover:bg-zinc-800/80 border border-white/8 hover:border-sky-500/30 rounded-xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] text-left group hover:shadow-lg hover:shadow-sky-900/20"
-              >
-                <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="h-5 w-5 text-sky-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-sm truncate">{league.name}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="flex items-center gap-1 text-xs text-zinc-500">
-                      <Users className="h-3 w-3" />
-                      {league.members?.length ?? 0} miembro{(league.members?.length ?? 0) !== 1 ? 's' : ''}
-                    </span>
-                    {(() => {
-                      const me = league.members?.find((m) => m.userId === user!.id)
-                      if (!me) return null
-                      const rank = (league.members?.filter((m) => m.totalPoints > me.totalPoints).length ?? 0) + 1
-                      return me.totalPoints > 0 ? (
-                        <span className="text-xs text-amber-400 font-semibold">{rank}° · {me.totalPoints} pts</span>
-                      ) : null
-                    })()}
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors flex-shrink-0" />
-              </button>
-            ))}
-          </div>
-        )}
       </main>
 
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
