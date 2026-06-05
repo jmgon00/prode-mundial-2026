@@ -155,6 +155,7 @@ router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) =>
   try {
     await prisma.$transaction([
       prisma.badge.deleteMany(),
+      prisma.funBet.deleteMany(),
       prisma.prediction.deleteMany(),
       prisma.leagueMember.deleteMany(),
       prisma.penalty.deleteMany(),

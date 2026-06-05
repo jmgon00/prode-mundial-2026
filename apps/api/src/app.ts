@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin'
 import userRoutes from './routes/users'
 import badgeRoutes from './routes/badges'
 import statsRoutes from './routes/stats'
+import funBetsRoutes from './routes/funbets'
 import { syncWorldCupResults } from './services/worldcup-sync'
 
 const app = express()
@@ -30,6 +31,7 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/badges', badgeRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/funbets', funBetsRoutes)
 
 app.use(errorHandler)
 

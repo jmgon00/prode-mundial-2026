@@ -150,6 +150,30 @@ export const userApi = {
     api.patch<{ user: AuthUser }>('/api/users/me', data),
 }
 
+// --- Fun Bets ---
+export interface FunBet {
+  id: string
+  matchId: string
+  leagueId: string
+  prediction: string
+}
+
+export interface FunBetReveal {
+  userId: string
+  username: string
+  avatarUrl: string | null
+  prediction: string
+}
+
+export const funBetsApi = {
+  upsert: (data: { matchId: string; leagueId: string; prediction: string }) =>
+    api.post<FunBet>('/api/funbets', data),
+  listByLeague: (leagueId: string) =>
+    api.get<FunBet[]>(`/api/funbets/league/${leagueId}`),
+  byMatch: (matchId: string, leagueId: string) =>
+    api.get<FunBetReveal[]>(`/api/funbets/match/${matchId}/league/${leagueId}`),
+}
+
 // --- Stats ---
 export interface UserStats {
   totalPoints: number

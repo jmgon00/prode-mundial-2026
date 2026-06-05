@@ -19,6 +19,7 @@ model User {
   leagueMemberships LeagueMember[]
   predictions       Prediction[]
   badges            Badge[]
+  funBets           FunBet[]
 }
 
 model League {
@@ -33,6 +34,7 @@ model League {
   members     LeagueMember[]
   penalties   Penalty[]
   predictions Prediction[]
+  funBets     FunBet[]
 }
 
 model LeagueMember {
@@ -83,6 +85,7 @@ model Match {
   isActive  Boolean     @default(false)
 
   predictions Prediction[]
+  funBets     FunBet[]
 }
 
 enum Stage {
@@ -110,6 +113,22 @@ model Prediction {
   predictedAwayScore Int
   pointsEarned       Int?
   createdAt          DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId, leagueId])
+}
+
+model FunBet {
+  id         String   @id @default(uuid())
+  userId     String
+  matchId    String
+  leagueId   String
+  prediction String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)

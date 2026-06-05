@@ -3,8 +3,8 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, BADGE_META } from '@/lib/api'
-import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats } from '@/lib/api'
+import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, funBetsApi, BADGE_META } from '@/lib/api'
+import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats, FunBet, FunBetReveal } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Copy, Check, Trophy, Users } from 'lucide-react'
@@ -45,6 +45,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [fetching, setFetching] = useState(true)
   const [codeCopied, setCodeCopied] = useState(false)
   const [stats, setStats] = useState<UserStats | null>(null)
+  const [funBets, setFunBets] = useState<Map<string, FunBet>>(new Map())
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -55,13 +56,15 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         rankingApi.get(id),
         badgeApi.listByLeague(id),
         statsApi.league(id),
-      ]).then(([l, m, preds, r, b, s]) => {
+        funBetsApi.listByLeague(id),
+      ]).then(([l, m, preds, r, b, s, fb]) => {
         setLeague(l)
         setMatches(m)
         setPredictions(new Map(preds.map((p) => [p.matchId, p])))
         setRanking(r)
         setBadges(b)
         setStats(s)
+        setFunBets(new Map(fb.map((f) => [f.matchId, f])))
       }).finally(() => setFetching(false))
     }
   }, [user, isLoading, id])
@@ -74,6 +77,13 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
     }
+  }
+
+  async function saveFunBet(matchId: string, prediction: string) {
+    try {
+      const fb = await funBetsApi.upsert({ matchId, leagueId: id, prediction })
+      setFunBets((prev) => new Map(prev).set(matchId, fb))
+    } catch { /* silently ignore */ }
   }
 
   async function savePrediction(matchId: string, home: number, away: number) {
@@ -212,13 +222,13 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                           <span className="text-xs text-zinc-600">Grupo {letter}</span>
                         </div>
                         {groupMatches.map((match) => (
-                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} />
+                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBet={funBets.get(match.id)} onSaveFunBet={saveFunBet} />
                         ))}
                       </div>
                     ))
                   ) : (
                     stageMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} />
+                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBet={funBets.get(match.id)} onSaveFunBet={saveFunBet} />
                     ))
                   )}
                 </div>
@@ -563,13 +573,15 @@ function useCountdown(targetDate: string) {
 }
 
 function MatchCard({
-  match, prediction, onSave, leagueId, currentUserId,
+  match, prediction, onSave, leagueId, currentUserId, funBet, onSaveFunBet,
 }: {
   match: Match
   prediction?: Prediction
   onSave: (matchId: string, home: number, away: number) => void
   leagueId: string
   currentUserId: string
+  funBet?: FunBet
+  onSaveFunBet: (matchId: string, prediction: string) => void
 }) {
   const [home, setHome] = useState(prediction?.predictedHomeScore?.toString() ?? '')
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
@@ -578,6 +590,33 @@ function MatchCard({
   const [showRivals, setShowRivals] = useState(false)
   const [rivals, setRivals] = useState<MatchPrediction[] | null>(null)
   const [loadingRivals, setLoadingRivals] = useState(false)
+  const [funBetText, setFunBetText] = useState(funBet?.prediction ?? '')
+  const [funBetSaved, setFunBetSaved] = useState(!!funBet)
+  const [savingFunBet, setSavingFunBet] = useState(false)
+  const [showFunBetReveals, setShowFunBetReveals] = useState(false)
+  const [funBetReveals, setFunBetReveals] = useState<FunBetReveal[] | null>(null)
+  const [loadingFunBetReveals, setLoadingFunBetReveals] = useState(false)
+
+  async function handleSaveFunBet() {
+    if (!funBetText.trim()) return
+    setSavingFunBet(true)
+    try {
+      await onSaveFunBet(match.id, funBetText.trim())
+      setFunBetSaved(true)
+    } catch { /* silently ignore */ }
+    finally { setSavingFunBet(false) }
+  }
+
+  async function toggleFunBetReveals() {
+    if (funBetReveals !== null) { setShowFunBetReveals((v) => !v); return }
+    setLoadingFunBetReveals(true)
+    try {
+      const data = await funBetsApi.byMatch(match.id, leagueId)
+      setFunBetReveals(data)
+      setShowFunBetReveals(true)
+    } catch { /* silently ignore */ }
+    finally { setLoadingFunBetReveals(false) }
+  }
 
   async function toggleRivals() {
     if (rivals !== null) { setShowRivals((v) => !v); return }
@@ -699,6 +738,75 @@ function MatchCard({
           </div>
         )}
       </div>
+
+      {/* Apuesta loca */}
+      <div className="border-t border-white/5 px-4 py-3 space-y-2">
+        <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">🎲 Apuesta loca</p>
+        {canPredict ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={funBetText}
+              onChange={(e) => { setFunBetText(e.target.value); setFunBetSaved(false) }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveFunBet() }}
+              placeholder="Ej: habrá 3 expulsados, habrá penal..."
+              maxLength={300}
+              className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-purple-500/50 focus:outline-none transition-colors"
+            />
+            <button
+              onClick={handleSaveFunBet}
+              disabled={savingFunBet || !funBetText.trim()}
+              className={cn(
+                'flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-40',
+                funBetSaved
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/50',
+              )}
+            >
+              {savingFunBet ? '...' : funBetSaved ? '✓' : 'Guardar'}
+            </button>
+          </div>
+        ) : funBetText ? (
+          <p className="text-xs text-zinc-400 italic">"{funBetText}"</p>
+        ) : (
+          <p className="text-xs text-zinc-600 italic">No apostaste nada raro</p>
+        )}
+      </div>
+
+      {/* Panel apuestas locas de todos (solo cuando FINISHED) */}
+      {match.status === 'FINISHED' && (
+        <div className="border-t border-white/5">
+          <button
+            onClick={toggleFunBetReveals}
+            disabled={loadingFunBetReveals}
+            className="w-full text-xs text-purple-500/70 hover:text-purple-400 py-2 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            {loadingFunBetReveals ? 'Cargando...' : showFunBetReveals ? '▲ Ocultar apuestas locas' : '🎲 Ver apuestas locas de todos'}
+          </button>
+          {showFunBetReveals && funBetReveals && (
+            <div className="pb-3 px-3 space-y-1.5">
+              {funBetReveals.length === 0 ? (
+                <p className="text-zinc-600 text-xs text-center py-2">Nadie apostó nada raro</p>
+              ) : (
+                funBetReveals.map((fb) => (
+                  <div key={fb.userId} className={cn(
+                    'flex items-start gap-2 rounded-lg px-2.5 py-2 text-xs',
+                    fb.userId === currentUserId ? 'bg-purple-500/10 border border-purple-500/20' : 'bg-white/3',
+                  )}>
+                    <span className="text-base leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className={cn('font-semibold', fb.userId === currentUserId ? 'text-purple-300' : 'text-zinc-300')}>
+                        {fb.username}{fb.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
+                      </span>
+                      <p className="text-zinc-400 mt-0.5 italic">"{fb.prediction}"</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Panel pronósticos de rivales */}
       {match.status === 'FINISHED' && (
