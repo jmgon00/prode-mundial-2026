@@ -164,7 +164,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
         {/* Tab Partidos */}
         <TabsContent value="matches" className="mt-0">
-          <div className="max-w-lg mx-auto px-4 py-4 space-y-6">
+          <div className="max-w-lg mx-auto px-4 py-4 space-y-6 pb-safe">
             {matches.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">📅</p>
@@ -216,7 +216,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
         {/* Tab Ranking */}
         <TabsContent value="ranking" className="mt-0">
-          <div className="max-w-lg mx-auto px-4 py-4 space-y-2">
+          <div className="max-w-lg mx-auto px-4 py-4 space-y-2 pb-safe">
             {ranking.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">🏆</p>
@@ -480,6 +480,27 @@ function PenaltiesTab({ league, userId, onUpdate }: { league: League; userId: st
   )
 }
 
+function useCountdown(targetDate: string) {
+  const getState = () => {
+    const diff = new Date(targetDate).getTime() - Date.now()
+    if (diff <= 0) return { label: '', urgency: 'ok' as const }
+    const totalMin = Math.floor(diff / 60_000)
+    const hours = Math.floor(totalMin / 60)
+    const mins = totalMin % 60
+    const days = Math.floor(hours / 24)
+    const remH = hours % 24
+    if (days >= 1) return { label: `${days}d ${remH}h`, urgency: 'ok' as const }
+    if (hours >= 1) return { label: `${hours}h ${mins}m`, urgency: 'soon' as const }
+    return { label: `${mins}m`, urgency: 'urgent' as const }
+  }
+  const [state, setState] = useState(getState)
+  useEffect(() => {
+    const id = setInterval(() => setState(getState()), 30_000)
+    return () => clearInterval(id)
+  }, [targetDate])
+  return state
+}
+
 function MatchCard({
   match,
   prediction,
@@ -492,6 +513,7 @@ function MatchCard({
   const [home, setHome] = useState(prediction?.predictedHomeScore?.toString() ?? '')
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
   const canPredict = match.status === 'SCHEDULED' && new Date() < new Date(match.matchDate)
+  const { label: countdown, urgency } = useCountdown(match.matchDate)
 
   function handleBlur() {
     const h = parseInt(home)
@@ -516,8 +538,18 @@ function MatchCard({
         {match.status === 'LIVE' && (
           <span className="text-xs text-red-400 uppercase tracking-wide font-semibold animate-pulse">En vivo</span>
         )}
-        {match.status === 'SCHEDULED' && (
-          <span className="text-xs text-zinc-600">Programado</span>
+        {match.status === 'SCHEDULED' && canPredict && countdown && (
+          <span className={cn(
+            'text-xs font-mono font-medium',
+            urgency === 'ok'     && 'text-emerald-500',
+            urgency === 'soon'   && 'text-amber-400',
+            urgency === 'urgent' && 'text-red-400 animate-pulse',
+          )}>
+            ⏱ {countdown}
+          </span>
+        )}
+        {match.status === 'SCHEDULED' && !canPredict && (
+          <span className="text-xs text-amber-600 font-medium">Cerrado</span>
         )}
       </div>
 
@@ -539,11 +571,11 @@ function MatchCard({
           ) : (
             <div className="flex items-center gap-1 flex-shrink-0">
               <Input
-                type="number"
-                min="0"
-                max="99"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={home}
-                onChange={(e) => setHome(e.target.value)}
+                onChange={(e) => setHome(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
                 className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
@@ -551,11 +583,11 @@ function MatchCard({
               />
               <span className="text-zinc-600 font-bold text-sm">:</span>
               <Input
-                type="number"
-                min="0"
-                max="99"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={away}
-                onChange={(e) => setAway(e.target.value)}
+                onChange={(e) => setAway(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
                 className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"

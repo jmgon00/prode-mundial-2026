@@ -128,3 +128,18 @@
     @apply font-sans;
   }
 }
+
+/* Safe area padding para iPhone con barra home */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);
+}
+
+/* Eliminar spinners de inputs numéricos */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}

@@ -453,17 +453,21 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
       {/* Carga de resultado */}
       <div className="flex items-center gap-2">
         <input
-          type="number" min="0" max="99"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={home}
-          onChange={(e) => setHome(e.target.value)}
+          onChange={(e) => setHome(e.target.value.replace(/\D/g, '').slice(0, 2))}
           placeholder="–"
           className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-emerald-500 outline-none"
         />
         <span className="text-zinc-600 font-bold text-sm">–</span>
         <input
-          type="number" min="0" max="99"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={away}
-          onChange={(e) => setAway(e.target.value)}
+          onChange={(e) => setAway(e.target.value.replace(/\D/g, '').slice(0, 2))}
           placeholder="–"
           className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-emerald-500 outline-none"
         />

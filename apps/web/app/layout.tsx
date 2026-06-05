@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
@@ -13,6 +13,13 @@ const spaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
 })
+
+export const viewport: Viewport = {
+  themeColor: '#09090b',
+  viewportFit: 'cover',
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: 'Prode Mundial 22Recortada',
