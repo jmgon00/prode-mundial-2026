@@ -90,7 +90,7 @@
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.12 0.01 180);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.72 0.22 155);
+  --primary: oklch(0.72 0.18 220);
   --primary-foreground: oklch(0.08 0 0);
   --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.96 0 0);
@@ -129,12 +129,12 @@
   }
 }
 
-/* Fondo gradiente estadio nocturno */
+/* Fondo gradiente estadio nocturno — paleta Argentina */
 .bg-stadium {
   background:
-    radial-gradient(ellipse at 10% 0%,   rgba(16, 185, 129, 0.13) 0%, transparent 45%),
-    radial-gradient(ellipse at 90% 100%, rgba(37,  99,  235, 0.10) 0%, transparent 45%),
-    linear-gradient(160deg, #050f0a 0%, #070d18 100%);
+    radial-gradient(ellipse at 10% 0%,   rgba(56, 189, 248, 0.14) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 100%, rgba(14, 165, 233, 0.08) 0%, transparent 45%),
+    linear-gradient(160deg, #050a12 0%, #070d18 100%);
   background-attachment: fixed;
 }
 

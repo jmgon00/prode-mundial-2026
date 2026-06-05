@@ -112,7 +112,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-zinc-500 text-sm">Cargando...</p>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
             onClick={copyCode}
             className="flex items-center gap-1.5 text-xs font-mono bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1.5 rounded-lg text-zinc-300 transition-colors"
           >
-            {codeCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+            {codeCopied ? <Check className="h-3 w-3 text-sky-400" /> : <Copy className="h-3 w-3" />}
             {league.inviteCode}
           </button>
         </div>
@@ -172,7 +172,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
           <TabsList className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-1 mt-4 h-auto">
             <TabsTrigger value="matches" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 transition-all">
               Partidos
-              {scheduledCount > 0 && <span className="ml-1.5 text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-mono">{scheduledCount}</span>}
+              {scheduledCount > 0 && <span className="ml-1.5 text-xs bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded-full font-mono">{scheduledCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="ranking" className="flex-1 rounded-lg text-sm py-2 data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 transition-all">
               Ranking
@@ -199,7 +199,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                   <div className="flex items-center gap-2">
                     <span className={cn(
                       'text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide',
-                      stage === 'GROUP'        && 'bg-emerald-500/15 text-emerald-400',
+                      stage === 'GROUP'        && 'bg-sky-500/15 text-sky-400',
                       stage === 'ROUND_OF_32'  && 'bg-blue-500/15 text-blue-400',
                       stage === 'ROUND_OF_16'  && 'bg-violet-500/15 text-violet-400',
                       stage === 'QUARTERFINAL' && 'bg-orange-500/15 text-orange-400',
@@ -248,7 +248,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                   <p className="text-white font-semibold text-sm">Tus stats</p>
                   <button
                     onClick={handleShare}
-                    className="flex items-center gap-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all"
+                    className="flex items-center gap-1.5 text-xs bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 px-2.5 py-1 rounded-lg transition-all"
                   >
                     📲 Compartir
                   </button>
@@ -259,9 +259,9 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                   <span className="text-amber-400 font-bold ml-auto">{stats.totalPoints} pts</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
-                  <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-lg p-2">
+                  <div className="bg-sky-500/8 border border-sky-500/15 rounded-lg p-2">
                     <p className="text-base">🎯</p>
-                    <p className="text-emerald-400 font-bold text-sm">{stats.exact}</p>
+                    <p className="text-sky-400 font-bold text-sm">{stats.exact}</p>
                     <p className="text-zinc-500 text-xs">exactos</p>
                   </div>
                   <div className="bg-blue-500/8 border border-blue-500/15 rounded-lg p-2">
@@ -317,7 +317,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                           {entry.userId === user?.id && <span className="text-xs text-zinc-600">(vos)</span>}
                         </div>
                         {entry.role === 'OWNER' && (
-                          <p className="text-xs text-emerald-500 mt-0.5">Organizador</p>
+                          <p className="text-xs text-sky-500 mt-0.5">Organizador</p>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -430,7 +430,7 @@ function PenaltiesTab({ league, userId, onUpdate }: { league: League; userId: st
           </div>
           {loadingVerdict ? (
             <div className="flex justify-center py-6">
-              <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : verdict ? (
             <div className="space-y-2">
@@ -643,7 +643,7 @@ function MatchCard({
       'rounded-xl overflow-hidden transition-all',
       match.status === 'FINISHED' && 'bg-zinc-900/60 border border-white/6',
       match.status === 'LIVE'     && 'bg-zinc-900/70 border border-red-500/40 shadow-md shadow-red-900/20',
-      match.status === 'SCHEDULED' && 'bg-zinc-900/70 border border-white/8 hover:border-emerald-500/25 hover:shadow-md hover:shadow-emerald-900/15',
+      match.status === 'SCHEDULED' && 'bg-zinc-900/70 border border-white/8 hover:border-sky-500/25 hover:shadow-md hover:shadow-sky-900/15',
     )}>
       {/* Header de la tarjeta */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">
@@ -657,7 +657,7 @@ function MatchCard({
         {match.status === 'SCHEDULED' && canPredict && countdown && (
           <span className={cn(
             'text-xs font-mono font-medium',
-            urgency === 'ok'     && 'text-emerald-500',
+            urgency === 'ok'     && 'text-sky-500',
             urgency === 'soon'   && 'text-amber-400',
             urgency === 'urgent' && 'text-red-400 animate-pulse',
           )}>
@@ -694,7 +694,7 @@ function MatchCard({
                 onChange={(e) => setHome(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
-                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
                 placeholder="–"
               />
               <span className="text-zinc-600 font-bold text-sm">:</span>
@@ -706,7 +706,7 @@ function MatchCard({
                 onChange={(e) => setAway(e.target.value.replace(/\D/g, '').slice(0, 2))}
                 onBlur={handleBlur}
                 disabled={!canPredict}
-                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-12 h-10 text-center p-0 text-base font-bold bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
                 placeholder="–"
               />
             </div>
@@ -727,7 +727,7 @@ function MatchCard({
             {pts !== null && pts !== undefined && (
               <span className={cn(
                 'text-xs font-bold px-2 py-0.5 rounded-full',
-                pts === 3 && 'bg-emerald-500/20 text-emerald-400',
+                pts === 3 && 'bg-sky-500/20 text-sky-400',
                 pts === 2 && 'bg-blue-500/20 text-blue-400',
                 pts === 1 && 'bg-yellow-500/20 text-yellow-400',
                 pts === 0 && 'bg-zinc-700/50 text-zinc-500',
@@ -741,7 +741,7 @@ function MatchCard({
 
       {/* Apuesta loca */}
       <div className="border-t border-white/5 px-4 py-3 space-y-2">
-        <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">🎲 Apuesta loca</p>
+        <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">🎲 Apuesta loca</p>
         {canPredict ? (
           <div className="flex gap-2">
             <input
@@ -751,7 +751,7 @@ function MatchCard({
               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveFunBet() }}
               placeholder="Ej: habrá 3 expulsados, habrá penal..."
               maxLength={300}
-              className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-purple-500/50 focus:outline-none transition-colors"
+              className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-sky-500/50 focus:outline-none transition-colors"
             />
             <button
               onClick={handleSaveFunBet}
@@ -759,8 +759,8 @@ function MatchCard({
               className={cn(
                 'flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-40',
                 funBetSaved
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/50',
+                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                  : 'bg-sky-600/30 text-sky-300 border border-sky-500/30 hover:bg-sky-600/50',
               )}
             >
               {savingFunBet ? '...' : funBetSaved ? '✓' : 'Guardar'}
@@ -779,7 +779,7 @@ function MatchCard({
           <button
             onClick={toggleFunBetReveals}
             disabled={loadingFunBetReveals}
-            className="w-full text-xs text-purple-500/70 hover:text-purple-400 py-2 flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full text-xs text-sky-500/70 hover:text-sky-400 py-2 flex items-center justify-center gap-1.5 transition-colors"
           >
             {loadingFunBetReveals ? 'Cargando...' : showFunBetReveals ? '▲ Ocultar apuestas locas' : '🎲 Ver apuestas locas de todos'}
           </button>
@@ -791,11 +791,11 @@ function MatchCard({
                 funBetReveals.map((fb) => (
                   <div key={fb.userId} className={cn(
                     'flex items-start gap-2 rounded-lg px-2.5 py-2 text-xs',
-                    fb.userId === currentUserId ? 'bg-purple-500/10 border border-purple-500/20' : 'bg-white/3',
+                    fb.userId === currentUserId ? 'bg-sky-500/10 border border-sky-500/20' : 'bg-white/3',
                   )}>
                     <span className="text-base leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
                     <div className="flex-1 min-w-0">
-                      <span className={cn('font-semibold', fb.userId === currentUserId ? 'text-purple-300' : 'text-zinc-300')}>
+                      <span className={cn('font-semibold', fb.userId === currentUserId ? 'text-sky-300' : 'text-zinc-300')}>
                         {fb.username}{fb.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
                       </span>
                       <p className="text-zinc-400 mt-0.5 italic">"{fb.prediction}"</p>
@@ -832,13 +832,13 @@ function MatchCard({
                   <div key={r.userId} className={cn(
                     'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs',
                     r.userId === currentUserId
-                      ? 'bg-emerald-500/10 border border-emerald-500/20'
+                      ? 'bg-sky-500/10 border border-sky-500/20'
                       : 'bg-white/3',
                   )}>
                     <span className="w-5 flex-shrink-0 text-center">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-zinc-600">{i + 1}</span>}
                     </span>
-                    <span className={cn('flex-1 font-medium truncate', r.userId === currentUserId ? 'text-emerald-300' : 'text-zinc-300')}>
+                    <span className={cn('flex-1 font-medium truncate', r.userId === currentUserId ? 'text-sky-300' : 'text-zinc-300')}>
                       {r.username}
                       {r.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
                     </span>
@@ -847,7 +847,7 @@ function MatchCard({
                     </span>
                     <span className={cn(
                       'font-bold flex-shrink-0 w-12 text-right',
-                      r.pointsEarned === 3 && 'text-emerald-400',
+                      r.pointsEarned === 3 && 'text-sky-400',
                       r.pointsEarned === 2 && 'text-blue-400',
                       r.pointsEarned === 1 && 'text-amber-400',
                       r.pointsEarned === 0 && 'text-zinc-600',

@@ -98,7 +98,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-zinc-500 text-sm">Cargando...</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             {user?.isAdmin && (
               <button
                 onClick={() => router.push('/admin')}
-                className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800"
+                className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800"
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Admin
@@ -153,8 +153,8 @@ export default function DashboardPage() {
 
         {/* Próximo partido */}
         {summary?.next && (
-          <div className="bg-emerald-500/8 border border-emerald-500/25 rounded-xl px-4 py-3 space-y-1">
-            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Próximo partido</p>
+          <div className="bg-sky-500/8 border border-sky-500/25 rounded-xl px-4 py-3 space-y-1">
+            <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Próximo partido</p>
             <div className="flex items-center justify-between gap-2">
               <p className="font-bold text-white text-sm">
                 {summary.next.homeTeam} <span className="text-zinc-500 font-normal">vs</span> {summary.next.awayTeam}
@@ -188,7 +188,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/30 active:scale-[0.97]">
+              <button className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm px-4 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/30 active:scale-[0.97]">
                 <Plus className="h-4 w-4" />
                 Crear liga
               </button>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                     onChange={(e) => setCreateName(e.target.value)}
                     required
                     minLength={3}
-                    className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white placeholder:text-zinc-500 h-11"
+                    className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white placeholder:text-zinc-500 h-11"
                   />
                 </div>
 
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                       value={penaltyInput}
                       onChange={(e) => setPenaltyInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPenalty() } }}
-                      className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white placeholder:text-zinc-500 h-9 text-sm"
+                      className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white placeholder:text-zinc-500 h-9 text-sm"
                     />
                     <button
                       type="button"
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 </div>
 
                 {createError && <p className="text-sm text-red-400">{createError}</p>}
-                <Button type="submit" className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" disabled={createLoading}>
+                <Button type="submit" className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-semibold" disabled={createLoading}>
                   {createLoading ? 'Creando...' : 'Crear liga'}
                 </Button>
               </form>
@@ -282,11 +282,11 @@ export default function DashboardPage() {
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
                     required
-                    className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white placeholder:text-zinc-500 h-11 uppercase tracking-widest font-mono"
+                    className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white placeholder:text-zinc-500 h-11 uppercase tracking-widest font-mono"
                   />
                 </div>
                 {joinError && <p className="text-sm text-red-400">{joinError}</p>}
-                <Button type="submit" className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" disabled={joinLoading}>
+                <Button type="submit" className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-semibold" disabled={joinLoading}>
                   {joinLoading ? 'Uniéndose...' : 'Unirse'}
                 </Button>
               </form>
@@ -310,10 +310,10 @@ export default function DashboardPage() {
               <button
                 key={league.id}
                 onClick={() => router.push(`/leagues/${league.id}`)}
-                className="w-full bg-zinc-900/70 hover:bg-zinc-800/80 border border-white/8 hover:border-emerald-500/30 rounded-xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] text-left group hover:shadow-lg hover:shadow-emerald-900/20"
+                className="w-full bg-zinc-900/70 hover:bg-zinc-800/80 border border-white/8 hover:border-sky-500/30 rounded-xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] text-left group hover:shadow-lg hover:shadow-sky-900/20"
               >
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                  <Trophy className="h-5 w-5 text-emerald-400" />
+                <div className="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center flex-shrink-0">
+                  <Trophy className="h-5 w-5 text-sky-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">{league.name}</p>
@@ -395,7 +395,7 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
               {AVATARS.map((emoji) => (
                 <button key={emoji} type="button" onClick={() => setAvatar(avatar === emoji ? '' : emoji)}
                   className={cn('w-9 h-9 text-lg flex items-center justify-center rounded-lg transition-all',
-                    avatar === emoji ? 'bg-emerald-500/20 border border-emerald-500/50 scale-110' : 'bg-zinc-800 hover:bg-zinc-700 border border-transparent'
+                    avatar === emoji ? 'bg-sky-500/20 border border-sky-500/50 scale-110' : 'bg-zinc-800 hover:bg-zinc-700 border border-transparent'
                   )}>
                   {emoji}
                 </button>
@@ -414,7 +414,7 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
               onChange={(e) => setUsername(e.target.value)}
               minLength={3}
               maxLength={20}
-              className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white h-11"
+              className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white h-11"
             />
           </div>
           <div className="border-t border-zinc-800 pt-4 space-y-3">
@@ -427,7 +427,7 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••"
-                className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white placeholder:text-zinc-500 h-11"
+                className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white placeholder:text-zinc-500 h-11"
               />
             </div>
             <div className="space-y-1.5">
@@ -438,13 +438,13 @@ function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void })
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••"
-                className="bg-zinc-800 border-zinc-700 focus:border-emerald-500 text-white placeholder:text-zinc-500 h-11"
+                className="bg-zinc-800 border-zinc-700 focus:border-sky-500 text-white placeholder:text-zinc-500 h-11"
               />
             </div>
           </div>
           {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
-          {success && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">{success}</p>}
-          <Button type="submit" className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" disabled={loading}>
+          {success && <p className="text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2">{success}</p>}
+          <Button type="submit" className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-semibold" disabled={loading}>
             {loading ? 'Guardando...' : 'Guardar cambios'}
           </Button>
         </form>

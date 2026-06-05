@@ -114,7 +114,7 @@ export default function AdminPage() {
   if (isLoading || fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -124,8 +124,8 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
         <div className="max-w-sm w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto">
-            <ShieldCheck className="h-7 w-7 text-emerald-400" />
+          <div className="w-14 h-14 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center mx-auto">
+            <ShieldCheck className="h-7 w-7 text-sky-400" />
           </div>
           <div>
             <h1 className="text-white font-bold text-xl">Panel de Admin</h1>
@@ -134,14 +134,14 @@ export default function AdminPage() {
             </p>
           </div>
           {claimMsg && (
-            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2">
               {claimMsg}
             </p>
           )}
           <button
             onClick={handleClaim}
             disabled={claimLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition-all disabled:opacity-50"
+            className="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2.5 rounded-xl transition-all disabled:opacity-50"
           >
             {claimLoading ? 'Verificando...' : 'Reclamar rol de admin'}
           </button>
@@ -170,9 +170,9 @@ export default function AdminPage() {
             <h1 className="font-semibold text-white text-sm">Panel de Administrador</h1>
             <p className="text-xs text-zinc-500">@{user.username}</p>
           </div>
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-xs text-emerald-400 font-medium">Admin</span>
+          <div className="flex items-center gap-1.5 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-full">
+            <ShieldCheck className="h-3.5 w-3.5 text-sky-400" />
+            <span className="text-xs text-sky-400 font-medium">Admin</span>
           </div>
         </div>
       </header>
@@ -203,7 +203,7 @@ export default function AdminPage() {
                 {/* Fila principal */}
                 <div className="flex items-center gap-3 px-4 py-3">
                   {s.isUnlocked
-                    ? <Unlock className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                    ? <Unlock className="h-4 w-4 text-sky-400 flex-shrink-0" />
                     : <Lock className="h-4 w-4 text-zinc-600 flex-shrink-0" />
                   }
                   <div className="flex-1 min-w-0">
@@ -218,7 +218,7 @@ export default function AdminPage() {
                       'text-xs font-semibold px-3 py-1.5 rounded-lg transition-all',
                       s.isUnlocked
                         ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        : 'bg-sky-600 hover:bg-sky-500 text-white'
                     )}
                   >
                     {s.isUnlocked ? 'Bloquear' : 'Desbloquear'}
@@ -265,7 +265,7 @@ export default function AdminPage() {
             <button
               onClick={handleSync}
               disabled={syncLoading}
-              className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold px-3 py-2 rounded-xl transition-all disabled:opacity-50"
+              className="flex-shrink-0 flex items-center gap-1.5 bg-sky-700 hover:bg-sky-600 text-white text-sm font-semibold px-3 py-2 rounded-xl transition-all disabled:opacity-50"
             >
               <RefreshCw className={cn('h-3.5 w-3.5', syncLoading && 'animate-spin')} />
               {syncLoading ? 'Sincronizando...' : 'Sincronizar ahora'}
@@ -279,7 +279,7 @@ export default function AdminPage() {
                   Última sync: {new Date(syncResult.timestamp).toLocaleTimeString('es-AR')}
                 </span>
                 {syncResult.finished > 0 && (
-                  <span className="text-emerald-400 font-semibold">✓ {syncResult.finished} partido{syncResult.finished !== 1 ? 's' : ''} finalizado{syncResult.finished !== 1 ? 's' : ''}</span>
+                  <span className="text-sky-400 font-semibold">✓ {syncResult.finished} partido{syncResult.finished !== 1 ? 's' : ''} finalizado{syncResult.finished !== 1 ? 's' : ''}</span>
                 )}
                 {syncResult.live > 0 && (
                   <span className="text-red-400 font-semibold animate-pulse">● {syncResult.live} en vivo</span>
@@ -421,8 +421,8 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
         <div className="flex items-center gap-2">
           {isFinished && (
             <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-xs font-medium text-emerald-400">Finalizado</span>
+              <CheckCircle className="h-3.5 w-3.5 text-sky-400" />
+              <span className="text-xs font-medium text-sky-400">Finalizado</span>
             </div>
           )}
           {isLive && (
@@ -469,7 +469,7 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
             onChange={(e) => setAwayTeam(e.target.value)}
             className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white"
           />
-          <button onClick={handleSaveTeams} disabled={loading} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded-lg font-medium transition-all disabled:opacity-50">
+          <button onClick={handleSaveTeams} disabled={loading} className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded-lg font-medium transition-all disabled:opacity-50">
             Guardar
           </button>
           <button onClick={() => setEditTeams(false)} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -498,7 +498,7 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
           value={home}
           onChange={(e) => setHome(e.target.value.replace(/\D/g, '').slice(0, 2))}
           placeholder="–"
-          className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-emerald-500 outline-none"
+          className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-sky-500 outline-none"
         />
         <span className="text-zinc-600 font-bold text-sm">–</span>
         <input
@@ -508,7 +508,7 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
           value={away}
           onChange={(e) => setAway(e.target.value.replace(/\D/g, '').slice(0, 2))}
           placeholder="–"
-          className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-emerald-500 outline-none"
+          className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg text-center text-sm font-bold text-white py-1.5 focus:border-sky-500 outline-none"
         />
         <button
           onClick={handleSaveResult}

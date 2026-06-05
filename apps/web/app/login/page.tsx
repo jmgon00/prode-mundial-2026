@@ -36,7 +36,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Fondo con patrón sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.18_0.04_162)_0%,_oklch(0.09_0_0)_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.18_0.04_220)_0%,_oklch(0.09_0_0)_70%)]" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvc3ZnPg==')] opacity-60" />
 
       <div className="relative w-full max-w-sm space-y-8">
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="bg-zinc-800/60 border-zinc-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white placeholder:text-zinc-500 h-11"
+                className="bg-zinc-800/60 border-zinc-700 focus:border-sky-500 focus:ring-sky-500/20 text-white placeholder:text-zinc-500 h-11"
               />
             </div>
             <div className="space-y-1.5">
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="bg-zinc-800/60 border-zinc-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white placeholder:text-zinc-500 h-11"
+                className="bg-zinc-800/60 border-zinc-700 focus:border-sky-500 focus:ring-sky-500/20 text-white placeholder:text-zinc-500 h-11"
               />
             </div>
 
@@ -98,7 +98,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg shadow-emerald-900/40 transition-all"
+              className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-lg shadow-sky-900/40 transition-all"
               disabled={loading}
             >
               {loading ? 'Ingresando...' : 'Ingresar'}
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-zinc-500">
             ¿No tenés cuenta?{' '}
-            <Link href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+            <Link href="/register" className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
               Registrate
             </Link>
           </p>
