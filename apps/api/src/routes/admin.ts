@@ -4,7 +4,8 @@ import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
 import { requireAdmin } from '../middleware/adminAuth'
 import { Stage } from '@prisma/client'
-import { checkAndAwardBadges, checkWoodenSpoon } from '../services/badges'
+import { scoreMatch } from '../services/scoring'
+import { syncWorldCupResults, lastSync } from '../services/worldcup-sync'
 
 const router = Router()
 
@@ -160,6 +161,21 @@ router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) =>
   }
 })
 
+// Estado de la última sincronización
+router.get('/sync-status', requireAuth, requireAdmin, (_req, res) => {
+  res.json(lastSync)
+})
+
+// Sincronización manual con worldcup26.ir
+router.post('/sync-now', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const result = await syncWorldCupResults()
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Correr el seed de partidos (solo si no hay partidos)
 router.post('/seed-matches', requireAuth, requireAdmin, async (_req, res, next) => {
   try {
@@ -175,46 +191,5 @@ router.post('/seed-matches', requireAuth, requireAdmin, async (_req, res, next) 
     next(err)
   }
 })
-
-async function scoreMatch(matchId: string, homeScore: number, awayScore: number) {
-  const match = await prisma.match.findUnique({ where: { id: matchId }, select: { stage: true } })
-  if (!match) return
-
-  const predictions = await prisma.prediction.findMany({ where: { matchId } })
-
-  for (const pred of predictions) {
-    let points = 0
-    const actualResult = Math.sign(homeScore - awayScore)
-    const predResult = Math.sign(pred.predictedHomeScore - pred.predictedAwayScore)
-
-    if (pred.predictedHomeScore === homeScore && pred.predictedAwayScore === awayScore) {
-      points = 3
-    } else if (
-      predResult === actualResult &&
-      Math.abs(pred.predictedHomeScore - pred.predictedAwayScore) === Math.abs(homeScore - awayScore)
-    ) {
-      points = 2
-    } else if (predResult === actualResult) {
-      points = 1
-    }
-
-    await prisma.prediction.update({ where: { id: pred.id }, data: { pointsEarned: points } })
-
-    if (points > 0) {
-      await prisma.leagueMember.updateMany({
-        where: { leagueId: pred.leagueId, userId: pred.userId },
-        data: { totalPoints: { increment: points } },
-      })
-    }
-
-    await checkAndAwardBadges(matchId, pred.userId, pred.leagueId, points, match.stage)
-  }
-
-  // WOODEN_SPOON: al finalizar la final, se premia al último de cada liga
-  if (match.stage === Stage.FINAL) {
-    const leagues = await prisma.league.findMany({ select: { id: true } })
-    await Promise.all(leagues.map((l) => checkWoodenSpoon(l.id)))
-  }
-}
 
 export default router

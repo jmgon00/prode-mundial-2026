@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { adminApi, matchApi, StageStatus, Match } from '@/lib/api'
-import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react'
+import { adminApi, matchApi, StageStatus, Match, SyncResult } from '@/lib/api'
+import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const STAGE_LABELS: Record<string, string> = {
@@ -36,11 +36,13 @@ export default function AdminPage() {
   const [resetConfirm, setResetConfirm] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetMsg, setResetMsg] = useState('')
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
+  const [syncLoading, setSyncLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && user?.isAdmin) {
-      Promise.all([adminApi.stages(), adminApi.matches()])
-        .then(([s, m]) => { setStages(s); setMatches(m) })
+      Promise.all([adminApi.stages(), adminApi.matches(), adminApi.syncStatus()])
+        .then(([s, m, sync]) => { setStages(s); setMatches(m); setSyncResult(sync) })
         .finally(() => setFetching(false))
     } else if (!isLoading) {
       setFetching(false)
@@ -59,6 +61,22 @@ export default function AdminPage() {
       setClaimMsg(err.message)
     } finally {
       setClaimLoading(false)
+    }
+  }
+
+  async function handleSync() {
+    setSyncLoading(true)
+    try {
+      const result = await adminApi.syncNow()
+      setSyncResult(result)
+      // Refrescar partidos para ver cambios de estado
+      const [s, m] = await Promise.all([adminApi.stages(), adminApi.matches()])
+      setStages(s)
+      setMatches(m)
+    } catch (err: any) {
+      setSyncResult({ finished: 0, live: 0, errors: [err.message], timestamp: new Date().toISOString() })
+    } finally {
+      setSyncLoading(false)
     }
   }
 
@@ -233,6 +251,52 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Sección: Sincronización automática */}
+        <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-white font-semibold">Sincronización automática</h2>
+              <p className="text-zinc-500 text-xs mt-0.5">
+                Trae resultados en tiempo real desde worldcup26.ir · Se ejecuta cada 3 min (solo fase de grupos)
+              </p>
+            </div>
+            <button
+              onClick={handleSync}
+              disabled={syncLoading}
+              className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold px-3 py-2 rounded-xl transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', syncLoading && 'animate-spin')} />
+              {syncLoading ? 'Sincronizando...' : 'Sincronizar ahora'}
+            </button>
+          </div>
+
+          {syncResult && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-zinc-500">
+                  Última sync: {new Date(syncResult.timestamp).toLocaleTimeString('es-AR')}
+                </span>
+                {syncResult.finished > 0 && (
+                  <span className="text-emerald-400 font-semibold">✓ {syncResult.finished} partido{syncResult.finished !== 1 ? 's' : ''} finalizado{syncResult.finished !== 1 ? 's' : ''}</span>
+                )}
+                {syncResult.live > 0 && (
+                  <span className="text-red-400 font-semibold animate-pulse">● {syncResult.live} en vivo</span>
+                )}
+                {syncResult.finished === 0 && syncResult.live === 0 && syncResult.errors.length === 0 && (
+                  <span className="text-zinc-600">Sin cambios</span>
+                )}
+              </div>
+              {syncResult.errors.length > 0 && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 space-y-1">
+                  {syncResult.errors.map((e, i) => (
+                    <p key={i} className="text-xs text-red-400">{e}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Sección: Reset de datos */}

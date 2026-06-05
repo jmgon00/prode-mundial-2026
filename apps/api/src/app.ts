@@ -11,6 +11,7 @@ import rankingRoutes from './routes/rankings'
 import adminRoutes from './routes/admin'
 import userRoutes from './routes/users'
 import badgeRoutes from './routes/badges'
+import { syncWorldCupResults } from './services/worldcup-sync'
 
 const app = express()
 
@@ -32,4 +33,8 @@ app.use(errorHandler)
 
 app.listen(env.PORT, () => {
   console.log(`Backend corriendo en http://localhost:${env.PORT}`)
+  // Auto-sync con worldcup26.ir cada 3 minutos
+  setInterval(() => {
+    syncWorldCupResults().catch((err) => console.error('[auto-sync] Error:', err.message))
+  }, 3 * 60 * 1000)
 })

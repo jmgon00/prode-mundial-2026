@@ -162,6 +162,13 @@ export interface StageStatus {
   isUnlocked: boolean
 }
 
+export interface SyncResult {
+  finished: number
+  live: number
+  errors: string[]
+  timestamp: string
+}
+
 export const adminApi = {
   claim: () => api.post<{ message: string; user: AuthUser }>('/api/admin/claim', {}),
   stages: () => api.get<StageStatus[]>('/api/admin/stages'),
@@ -174,6 +181,8 @@ export const adminApi = {
   setTeams: (id: string, homeTeam: string, awayTeam: string) =>
     api.patch<Match>(`/api/admin/matches/${id}/teams`, { homeTeam, awayTeam }),
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
+  syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),
+  syncNow: () => api.post<SyncResult>('/api/admin/sync-now', {}),
 }
 
 // --- Rankings ---
