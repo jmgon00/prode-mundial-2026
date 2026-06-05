@@ -56,7 +56,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         rankingApi.get(id),
         badgeApi.listByLeague(id),
         statsApi.league(id),
-        funBetsApi.listByLeague(id),
+        funBetsApi.listByLeague(id).catch(() => []),
       ]).then(([l, m, preds, r, b, s, fb]) => {
         setLeague(l)
         setMatches(m)
@@ -64,7 +64,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         setRanking(r)
         setBadges(b)
         setStats(s)
-        setFunBets(new Map(fb.map((f) => [f.matchId, f])))
+        setFunBets(new Map((fb as any[]).map((f) => [f.matchId, f])))
       }).finally(() => setFetching(false))
     }
   }, [user, isLoading, id])
