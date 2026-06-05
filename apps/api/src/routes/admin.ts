@@ -115,6 +115,23 @@ router.patch('/matches/:id/result', requireAuth, requireAdmin, async (req, res, 
   }
 })
 
+// Cambiar estado de un partido manualmente (LIVE / SCHEDULED)
+router.patch('/matches/:id/status', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { status } = z.object({
+      status: z.enum(['LIVE', 'SCHEDULED']),
+    }).parse(req.body)
+
+    const match = await prisma.match.update({
+      where: { id: req.params.id },
+      data: { status },
+    })
+    res.json(match)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Actualizar equipos de un partido (para cuando se conocen los clasificados)
 router.patch('/matches/:id/teams', requireAuth, requireAdmin, async (req, res, next) => {
   try {

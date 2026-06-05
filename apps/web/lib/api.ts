@@ -180,6 +180,8 @@ export const adminApi = {
     api.patch<Match>(`/api/admin/matches/${id}/result`, { homeScore, awayScore }),
   setTeams: (id: string, homeTeam: string, awayTeam: string) =>
     api.patch<Match>(`/api/admin/matches/${id}/teams`, { homeTeam, awayTeam }),
+  setStatus: (id: string, status: 'LIVE' | 'SCHEDULED') =>
+    api.patch<Match>(`/api/admin/matches/${id}/status`, { status }),
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
   syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),
   syncNow: () => api.post<SyncResult>('/api/admin/sync-now', {}),

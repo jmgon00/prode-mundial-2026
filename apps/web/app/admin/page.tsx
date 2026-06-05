@@ -400,19 +400,58 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
   }
 
   const isFinished = match.status === 'FINISHED'
+  const isLive = match.status === 'LIVE'
+
+  async function handleSetStatus(status: 'LIVE' | 'SCHEDULED') {
+    setLoading(true)
+    try {
+      const updated = await adminApi.setStatus(match.id, status)
+      onSaved(updated)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs text-zinc-500">{formatDate(match.matchDate)}</span>
-        <div className="flex items-center gap-1.5">
-          {isFinished
-            ? <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-            : <Circle className="h-3.5 w-3.5 text-zinc-600" />
-          }
-          <span className={cn('text-xs font-medium', isFinished ? 'text-emerald-400' : 'text-zinc-600')}>
-            {isFinished ? 'Finalizado' : 'Pendiente'}
-          </span>
+        <div className="flex items-center gap-2">
+          {isFinished && (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-xs font-medium text-emerald-400">Finalizado</span>
+            </div>
+          )}
+          {isLive && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-red-400 animate-pulse">● EN VIVO</span>
+              <button
+                onClick={() => handleSetStatus('SCHEDULED')}
+                disabled={loading}
+                className="text-xs text-zinc-600 hover:text-zinc-400 underline transition-colors"
+              >
+                deshacer
+              </button>
+            </div>
+          )}
+          {!isFinished && !isLive && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <Circle className="h-3.5 w-3.5 text-zinc-600" />
+                <span className="text-xs font-medium text-zinc-600">Pendiente</span>
+              </div>
+              <button
+                onClick={() => handleSetStatus('LIVE')}
+                disabled={loading}
+                className="text-xs bg-red-500/15 hover:bg-red-500/25 text-red-400 font-semibold px-2 py-0.5 rounded-md transition-colors disabled:opacity-40"
+              >
+                ● En vivo
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
