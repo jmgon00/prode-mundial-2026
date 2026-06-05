@@ -84,14 +84,14 @@
 }
 
 .dark {
-  --background: oklch(0.09 0 0);
-  --foreground: oklch(0.96 0 0);
-  --card: oklch(0.13 0 0);
-  --card-foreground: oklch(0.96 0 0);
-  --popover: oklch(0.13 0 0);
-  --popover-foreground: oklch(0.96 0 0);
-  --primary: oklch(0.696 0.17 162);
-  --primary-foreground: oklch(0.09 0 0);
+  --background: oklch(0.08 0.01 180);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.12 0.01 180);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.12 0.01 180);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.72 0.22 155);
+  --primary-foreground: oklch(0.08 0 0);
   --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.96 0 0);
   --muted: oklch(0.18 0 0);
@@ -127,6 +127,15 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Fondo gradiente estadio nocturno */
+.bg-stadium {
+  background:
+    radial-gradient(ellipse at 10% 0%,   rgba(16, 185, 129, 0.13) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 100%, rgba(37,  99,  235, 0.10) 0%, transparent 45%),
+    linear-gradient(160deg, #050f0a 0%, #070d18 100%);
+  background-attachment: fixed;
 }
 
 /* Safe area padding para iPhone con barra home */

@@ -115,9 +115,9 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const finishedCount = matches.filter((m) => m.status === 'FINISHED').length
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-stadium">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -231,10 +231,10 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                     key={entry.userId}
                     className={cn(
                       'rounded-xl border transition-all',
-                      idx === 0 && 'bg-amber-500/5 border-amber-500/30',
-                      idx === 1 && 'bg-zinc-400/5 border-zinc-600/30',
-                      idx === 2 && 'bg-orange-500/5 border-orange-700/30',
-                      idx > 2 && 'bg-zinc-900 border-zinc-800',
+                      idx === 0 && 'bg-amber-500/8 border-amber-400/40 shadow-md shadow-amber-900/25',
+                      idx === 1 && 'bg-slate-400/5 border-slate-400/30 shadow-sm shadow-slate-900/20',
+                      idx === 2 && 'bg-orange-600/5 border-orange-600/30',
+                      idx > 2 && 'bg-zinc-900/60 border-white/6',
                     )}
                   >
                     <div className="flex items-center gap-4 px-4 py-3">
@@ -526,8 +526,10 @@ function MatchCard({
 
   return (
     <div className={cn(
-      'bg-zinc-900 border rounded-xl overflow-hidden transition-all',
-      match.status === 'FINISHED' ? 'border-zinc-800' : 'border-zinc-800 hover:border-zinc-700',
+      'rounded-xl overflow-hidden transition-all',
+      match.status === 'FINISHED' && 'bg-zinc-900/60 border border-white/6',
+      match.status === 'LIVE'     && 'bg-zinc-900/70 border border-red-500/40 shadow-md shadow-red-900/20',
+      match.status === 'SCHEDULED' && 'bg-zinc-900/70 border border-white/8 hover:border-emerald-500/25 hover:shadow-md hover:shadow-emerald-900/15',
     )}>
       {/* Header de la tarjeta */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-zinc-800 bg-zinc-900/50">

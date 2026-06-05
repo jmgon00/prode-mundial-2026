@@ -156,9 +156,9 @@ export default function AdminPage() {
   const matchesByStage = (stage: string) => matches.filter((m) => m.stage === stage)
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-stadium">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.push('/dashboard')}

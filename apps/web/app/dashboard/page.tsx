@@ -101,9 +101,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-stadium">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lg">
@@ -140,7 +140,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-safe">
         {/* Acciones */}
         <div className="grid grid-cols-2 gap-3">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -267,7 +267,7 @@ export default function DashboardPage() {
               <button
                 key={league.id}
                 onClick={() => router.push(`/leagues/${league.id}`)}
-                className="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] text-left group"
+                className="w-full bg-zinc-900/70 hover:bg-zinc-800/80 border border-white/8 hover:border-emerald-500/30 rounded-xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] text-left group hover:shadow-lg hover:shadow-emerald-900/20"
               >
                 <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
                   <Trophy className="h-5 w-5 text-emerald-400" />
