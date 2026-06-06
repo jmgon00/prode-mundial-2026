@@ -2,13 +2,13 @@
   "name": "prode-mundial-backend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "set NODE_OPTIONS=--max-old-space-size=4096 && tsx watch src/app.ts",
-    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && tsc",
+    "dev": "NODE_OPTIONS=--max-old-space-size=4096 tsx watch src/app.ts",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 npx tsc",
     "start": "node dist/app.js",
-    "db:generate": "set NODE_OPTIONS=--max-old-space-size=4096 && prisma generate",
+    "db:generate": "NODE_OPTIONS=--max-old-space-size=4096 prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "set NODE_OPTIONS=--max-old-space-size=4096 && tsx prisma/seed.ts"
+    "db:seed": "NODE_OPTIONS=--max-old-space-size=4096 tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
