@@ -102,6 +102,26 @@ export interface Match {
 export interface MatchSummary {
   next: Match | null
   recent: Match[]
+  upcoming: Match[]
+}
+
+export interface GroupTeam {
+  teamId: string
+  name_en: string
+  fifa_code: string
+  mp: number
+  w: number
+  d: number
+  l: number
+  pts: number
+  gf: number
+  ga: number
+  gd: number
+}
+
+export interface GroupStanding {
+  group: string
+  teams: GroupTeam[]
 }
 
 export const matchApi = {
@@ -110,6 +130,10 @@ export const matchApi = {
     return api.get<Match[]>(`/api/matches${qs}`)
   },
   summary: () => api.get<MatchSummary>('/api/matches/summary'),
+}
+
+export const groupsApi = {
+  list: () => api.get<GroupStanding[]>('/api/groups'),
 }
 
 // --- Predictions ---

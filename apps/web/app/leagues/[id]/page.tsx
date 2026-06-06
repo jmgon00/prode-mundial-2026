@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Copy, Check, Trophy, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getFlag } from '@/lib/flags'
 
 const STAGE_LABELS: Record<string, string> = {
   GROUP: 'Fase de grupos',
@@ -674,7 +675,7 @@ function MatchCard({
         <div className="flex items-center gap-2">
           {/* Equipo local */}
           <span className="flex-1 text-right font-semibold text-sm text-white truncate">
-            {match.homeTeam}
+            {match.homeTeam} {getFlag(match.homeTeam)}
           </span>
 
           {/* Marcador / Inputs */}
@@ -714,7 +715,7 @@ function MatchCard({
 
           {/* Equipo visitante */}
           <span className="flex-1 font-semibold text-sm text-white truncate">
-            {match.awayTeam}
+            {getFlag(match.awayTeam)} {match.awayTeam}
           </span>
         </div>
 

@@ -28,7 +28,8 @@ router.get('/', requireAuth, async (req, res, next) => {
 router.get('/summary', requireAuth, async (_req, res, next) => {
   try {
     const now = new Date()
-    const [next, recent] = await Promise.all([
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const [next, recent, upcoming] = await Promise.all([
       prisma.match.findFirst({
         where: { isActive: true, status: 'SCHEDULED', matchDate: { gte: now } },
         orderBy: { matchDate: 'asc' },
@@ -38,8 +39,17 @@ router.get('/summary', requireAuth, async (_req, res, next) => {
         orderBy: { matchDate: 'desc' },
         take: 3,
       }),
+      prisma.match.findMany({
+        where: {
+          isActive: true,
+          status: { in: ['SCHEDULED', 'LIVE'] },
+          matchDate: { gte: now, lte: in24h },
+        },
+        orderBy: { matchDate: 'asc' },
+        take: 8,
+      }),
     ])
-    res.json({ next: next ?? null, recent })
+    res.json({ next: next ?? null, recent, upcoming })
   } catch (err) {
     next(err)
   }

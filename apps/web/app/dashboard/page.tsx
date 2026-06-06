@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
 import { leagueApi, userApi, matchApi, League, Match, MatchSummary } from '@/lib/api'
+import { getFlag } from '@/lib/flags'
 import { WorldCupLogo } from '@/components/WorldCupLogo'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -151,18 +152,57 @@ export default function DashboardPage() {
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 pb-safe">
 
-        {/* Próximo partido */}
-        {summary?.next && (
-          <div className="bg-sky-500/8 border border-sky-500/25 rounded-xl px-4 py-3 space-y-1">
-            <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Próximo partido</p>
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-bold text-white text-sm">
-                {summary.next.homeTeam} <span className="text-zinc-500 font-normal">vs</span> {summary.next.awayTeam}
-              </p>
-              <span className="text-xs text-zinc-400 flex-shrink-0">
-                {new Date(summary.next.matchDate).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-              </span>
+        {/* Partidos de hoy / próximo */}
+        {summary && summary.upcoming.length > 0 ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Próximas 24hs</p>
+              <button onClick={() => router.push('/grupos')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
+                Tabla de grupos →
+              </button>
             </div>
+            <div className="space-y-1.5">
+              {summary.upcoming.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 bg-white/8 border border-white/10 rounded-xl px-3 py-2.5 backdrop-blur-sm">
+                  <span className="flex-1 text-right text-sm font-semibold text-white truncate">
+                    {m.homeTeam} {getFlag(m.homeTeam)}
+                  </span>
+                  <div className="flex-shrink-0 text-center">
+                    {m.status === 'LIVE' ? (
+                      <span className="text-xs font-bold text-red-400 animate-pulse px-2">● LIVE</span>
+                    ) : (
+                      <span className="text-xs text-zinc-500 font-mono">
+                        {new Date(m.matchDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                  <span className="flex-1 text-sm font-semibold text-white truncate">
+                    {getFlag(m.awayTeam)} {m.awayTeam}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : summary?.next ? (
+          <div className="bg-sky-500/8 border border-sky-500/25 rounded-xl px-4 py-3 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Próximo partido</p>
+              <button onClick={() => router.push('/grupos')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
+                Tabla de grupos →
+              </button>
+            </div>
+            <p className="font-bold text-white text-sm">
+              {getFlag(summary.next.homeTeam)} {summary.next.homeTeam} <span className="text-zinc-500 font-normal">vs</span> {getFlag(summary.next.awayTeam)} {summary.next.awayTeam}
+            </p>
+            <p className="text-xs text-zinc-400">
+              {new Date(summary.next.matchDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <button onClick={() => router.push('/grupos')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
+              Tabla de grupos →
+            </button>
           </div>
         )}
 
