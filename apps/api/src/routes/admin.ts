@@ -10,6 +10,26 @@ import { env } from '../config/env'
 
 const router = Router()
 
+// TEMP: Deletear usuario por email (sin auth, solo para setup)
+router.delete('/user/:email', async (req, res, next) => {
+  try {
+    const { email } = req.params
+    if (!email.includes('@')) throw new Error('Email inválido')
+
+    const deleted = await prisma.user.delete({
+      where: { email },
+      select: { id: true, email: true, username: true }
+    })
+
+    res.json({ message: 'Usuario eliminado', user: deleted })
+  } catch (err: any) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ message: 'Usuario no encontrado' })
+    }
+    next(err)
+  }
+})
+
 // Promover al usuario actual como admin (requiere ser el email autorizado)
 router.post('/claim', requireAuth, async (req: any, res, next) => {
   try {
