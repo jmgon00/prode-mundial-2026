@@ -245,6 +245,20 @@ export const adminApi = {
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
   syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),
   syncNow: () => api.post<SyncResult>('/api/admin/sync-now', {}),
+  funBetsByMatch: (matchId: string) => api.get<AdminFunBet[]>(`/api/admin/funbets/${matchId}`),
+  awardFunBet: (id: string) => api.patch<{ message: string; pointsEarned: number }>(`/api/admin/funbets/${id}/award`, {}),
+  revokeFunBet: (id: string) => api.patch<{ message: string; pointsEarned: null }>(`/api/admin/funbets/${id}/revoke`, {}),
+}
+
+export interface AdminFunBet {
+  id: string
+  userId: string
+  username: string
+  avatarUrl: string | null
+  leagueId: string
+  leagueName: string
+  prediction: string
+  pointsEarned: number | null
 }
 
 // --- Rankings ---

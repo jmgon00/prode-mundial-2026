@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { adminApi, matchApi, StageStatus, Match, SyncResult } from '@/lib/api'
-import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck, RefreshCw } from 'lucide-react'
+import { adminApi, matchApi, StageStatus, Match, SyncResult, AdminFunBet } from '@/lib/api'
+import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck, RefreshCw, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const STAGE_LABELS: Record<string, string> = {
@@ -370,6 +370,9 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
   const [editTeams, setEditTeams] = useState(false)
   const [homeTeam, setHomeTeam] = useState(match.homeTeam)
   const [awayTeam, setAwayTeam] = useState(match.awayTeam)
+  const [showFunBets, setShowFunBets] = useState(false)
+  const [funBets, setFunBets] = useState<AdminFunBet[] | null>(null)
+  const [loadingFunBets, setLoadingFunBets] = useState(false)
 
   async function handleSaveResult() {
     const h = parseInt(home)
@@ -401,6 +404,31 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
 
   const isFinished = match.status === 'FINISHED'
   const isLive = match.status === 'LIVE'
+
+  async function toggleFunBets() {
+    if (funBets !== null) { setShowFunBets((v) => !v); return }
+    setLoadingFunBets(true)
+    try {
+      const data = await adminApi.funBetsByMatch(match.id)
+      setFunBets(data)
+      setShowFunBets(true)
+    } catch (err: any) { alert(err.message) }
+    finally { setLoadingFunBets(false) }
+  }
+
+  async function handleAward(id: string) {
+    try {
+      await adminApi.awardFunBet(id)
+      setFunBets((prev) => prev?.map((fb) => fb.id === id ? { ...fb, pointsEarned: 5 } : fb) ?? null)
+    } catch (err: any) { alert(err.message) }
+  }
+
+  async function handleRevoke(id: string) {
+    try {
+      await adminApi.revokeFunBet(id)
+      setFunBets((prev) => prev?.map((fb) => fb.id === id ? { ...fb, pointsEarned: null } : fb) ?? null)
+    } catch (err: any) { alert(err.message) }
+  }
 
   async function handleSetStatus(status: 'LIVE' | 'SCHEDULED') {
     setLoading(true)
@@ -518,6 +546,58 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
           {loading ? '...' : isFinished ? 'Actualizar' : 'Cargar resultado'}
         </button>
       </div>
+
+      {/* Apuestas locas */}
+      {isFinished && (
+        <div className="border-t border-zinc-800/50 pt-2">
+          <button
+            onClick={toggleFunBets}
+            disabled={loadingFunBets}
+            className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+          >
+            <Zap className="h-3 w-3" />
+            {loadingFunBets ? 'Cargando...' : showFunBets ? 'Ocultar apuestas locas' : 'Ver apuestas locas'}
+          </button>
+
+          {showFunBets && funBets && (
+            <div className="mt-2 space-y-1.5">
+              {funBets.length === 0 ? (
+                <p className="text-xs text-zinc-600">Nadie apostó en este partido</p>
+              ) : (
+                funBets.map((fb) => (
+                  <div key={fb.id} className="flex items-center gap-2 bg-zinc-800/40 rounded-lg px-3 py-2">
+                    <span className="text-sm leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-semibold text-zinc-300">{fb.username}</span>
+                      <span className="text-xs text-zinc-600 ml-1">· {fb.leagueName}</span>
+                      <p className="text-xs text-zinc-400 italic mt-0.5">"{fb.prediction}"</p>
+                    </div>
+                    {fb.pointsEarned !== null ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-xs font-bold text-sky-400">+{fb.pointsEarned} pts</span>
+                        <button
+                          onClick={() => handleRevoke(fb.id)}
+                          className="text-xs text-zinc-600 hover:text-red-400 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleAward(fb.id)}
+                        className="flex-shrink-0 flex items-center gap-1 text-xs bg-sky-600/20 hover:bg-sky-600/40 text-sky-400 border border-sky-500/30 px-2 py-1 rounded-lg transition-all"
+                      >
+                        <Zap className="h-3 w-3" />
+                        +5 pts
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

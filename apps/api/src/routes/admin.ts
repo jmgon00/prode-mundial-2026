@@ -179,6 +179,68 @@ router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) =>
   }
 })
 
+// Ver apuestas locas de un partido (todas las ligas)
+router.get('/funbets/:matchId', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const funBets = await prisma.funBet.findMany({
+      where: { matchId: req.params.matchId },
+      include: {
+        user: { select: { id: true, username: true, avatarUrl: true } },
+        league: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+    res.json(funBets.map((fb) => ({
+      id: fb.id,
+      userId: fb.userId,
+      username: fb.user.username,
+      avatarUrl: fb.user.avatarUrl,
+      leagueId: fb.leagueId,
+      leagueName: fb.league.name,
+      prediction: fb.prediction,
+      pointsEarned: fb.pointsEarned,
+    })))
+  } catch (err) { next(err) }
+})
+
+const FUN_BET_POINTS = 5
+
+// Otorgar puntos a una apuesta loca
+router.patch('/funbets/:id/award', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const fb = await prisma.funBet.findUnique({ where: { id: req.params.id } })
+    if (!fb) return res.status(404).json({ message: 'Apuesta no encontrada' })
+    if (fb.pointsEarned !== null) return res.status(400).json({ message: 'Ya tiene puntos asignados' })
+
+    await prisma.$transaction([
+      prisma.funBet.update({ where: { id: fb.id }, data: { pointsEarned: FUN_BET_POINTS } }),
+      prisma.leagueMember.updateMany({
+        where: { leagueId: fb.leagueId, userId: fb.userId },
+        data: { totalPoints: { increment: FUN_BET_POINTS } },
+      }),
+    ])
+    res.json({ message: `+${FUN_BET_POINTS} pts otorgados`, pointsEarned: FUN_BET_POINTS })
+  } catch (err) { next(err) }
+})
+
+// Revocar puntos de una apuesta loca
+router.patch('/funbets/:id/revoke', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const fb = await prisma.funBet.findUnique({ where: { id: req.params.id } })
+    if (!fb) return res.status(404).json({ message: 'Apuesta no encontrada' })
+    if (fb.pointsEarned === null) return res.status(400).json({ message: 'No tiene puntos asignados' })
+
+    await prisma.$transaction([
+      prisma.funBet.update({ where: { id: fb.id }, data: { pointsEarned: null } }),
+      prisma.leagueMember.updateMany({
+        where: { leagueId: fb.leagueId, userId: fb.userId },
+        data: { totalPoints: { decrement: fb.pointsEarned } },
+      }),
+    ])
+    res.json({ message: 'Puntos revocados', pointsEarned: null })
+  } catch (err) { next(err) }
+})
+
 // Estado de la última sincronización
 router.get('/sync-status', requireAuth, requireAdmin, (_req, res) => {
   res.json(lastSync)

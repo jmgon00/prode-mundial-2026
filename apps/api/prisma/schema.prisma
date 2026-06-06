@@ -126,9 +126,10 @@ model FunBet {
   userId     String
   matchId    String
   leagueId   String
-  prediction String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  prediction   String
+  pointsEarned Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
