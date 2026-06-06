@@ -7,6 +7,7 @@ import { env } from '../config/env'
 import { AppError } from '../middleware/errorHandler'
 import { requireAuth } from '../middleware/auth'
 
+
 const router = Router()
 
 const registerSchema = z.object({
@@ -30,8 +31,9 @@ router.post('/register', async (req, res, next) => {
     if (existing) throw new AppError(409, 'Email o username ya registrado')
 
     const passwordHash = await bcrypt.hash(password, 10)
+    const isAdmin = env.ADMIN_EMAIL ? email === env.ADMIN_EMAIL : false
     const user = await prisma.user.create({
-      data: { email, username, passwordHash },
+      data: { email, username, passwordHash, isAdmin },
       select: { id: true, email: true, username: true, isAdmin: true, avatarUrl: true },
     })
 
