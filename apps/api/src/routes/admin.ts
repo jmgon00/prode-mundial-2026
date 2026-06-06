@@ -6,16 +6,28 @@ import { requireAdmin } from '../middleware/adminAuth'
 import { Stage } from '@prisma/client'
 import { scoreMatch } from '../services/scoring'
 import { syncWorldCupResults, lastSync } from '../services/worldcup-sync'
+import { env } from '../config/env'
 
 const router = Router()
 
-// Promover al usuario actual como admin (solo si no existe ningún admin aún)
+// Promover al usuario actual como admin (requiere ser el email autorizado)
 router.post('/claim', requireAuth, async (req: any, res, next) => {
   try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, email: true, username: true, isAdmin: true },
+    })
+    if (!currentUser) return res.status(404).json({ message: 'Usuario no encontrado' })
+
+    if (env.ADMIN_EMAIL && currentUser.email !== env.ADMIN_EMAIL) {
+      return res.status(403).json({ message: 'No tenés autorización para ser administrador' })
+    }
+
     const adminExists = await prisma.user.findFirst({ where: { isAdmin: true } })
     if (adminExists) {
       return res.status(403).json({ message: 'Ya existe un administrador' })
     }
+
     const user = await prisma.user.update({
       where: { id: req.userId },
       data: { isAdmin: true },
