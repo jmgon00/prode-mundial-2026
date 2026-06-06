@@ -152,4 +152,28 @@ router.delete('/:id/penalties/:penaltyId', requireAuth, async (req: AuthRequest,
   }
 })
 
+// Salir de una liga
+router.post('/:id/leave', requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.userId!
+    const league = await prisma.league.findUnique({ where: { id: req.params.id } })
+    if (!league) throw new AppError(404, 'Liga no encontrada')
+
+    const membership = await prisma.leagueMember.findUnique({
+      where: { leagueId_userId: { leagueId: req.params.id, userId } },
+    })
+    if (!membership) throw new AppError(404, 'No sos miembro de esta liga')
+
+    if (league.ownerId === userId) throw new AppError(403, 'El organizador no puede salir. Transferí la liga o eliminala.')
+
+    await prisma.leagueMember.delete({
+      where: { leagueId_userId: { leagueId: req.params.id, userId } },
+    })
+
+    res.json({ message: 'Saliste de la liga' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

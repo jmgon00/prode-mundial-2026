@@ -7,7 +7,7 @@ import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, fun
 import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats, FunBet, FunBetReveal } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Copy, Check, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Copy, Check, Trophy, Users, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getFlag } from '@/lib/flags'
 
@@ -47,6 +47,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [codeCopied, setCodeCopied] = useState(false)
   const [stats, setStats] = useState<UserStats | null>(null)
   const [funBets, setFunBets] = useState<Map<string, FunBet>>(new Map())
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
+  const [leavingLeague, setLeavingLeague] = useState(false)
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -109,6 +111,24 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     }
   }
 
+  async function handleLeaveLeague() {
+    if (!league || !user) return
+    if (league.ownerId === user.id) {
+      alert('No podés salir siendo el organizador')
+      return
+    }
+    setLeavingLeague(true)
+    try {
+      await leagueApi.leave(id)
+      router.push('/dashboard')
+    } catch (err: any) {
+      alert(err.message || 'Error al salir de la liga')
+      setConfirmingLeave(false)
+    } finally {
+      setLeavingLeague(false)
+    }
+  }
+
   if (isLoading || fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
@@ -142,29 +162,61 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     <div className="min-h-screen bg-stadium">
       {/* Header */}
       <header className="border-b border-white/8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-white truncate text-sm">{league.name}</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-zinc-500 flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {league.members?.length ?? 0} miembros
-              </span>
+        <div className="max-w-lg mx-auto px-4 py-3 space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-semibold text-white truncate text-sm">{league.name}</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-zinc-500 flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {league.members?.length ?? 0} miembros
+                </span>
+              </div>
             </div>
+            <button
+              onClick={copyCode}
+              className="flex items-center gap-1.5 text-xs font-mono bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1.5 rounded-lg text-zinc-300 transition-colors flex-shrink-0"
+            >
+              {codeCopied ? <Check className="h-3 w-3 text-sky-400" /> : <Copy className="h-3 w-3" />}
+              {league.inviteCode}
+            </button>
           </div>
-          <button
-            onClick={copyCode}
-            className="flex items-center gap-1.5 text-xs font-mono bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1.5 rounded-lg text-zinc-300 transition-colors"
-          >
-            {codeCopied ? <Check className="h-3 w-3 text-sky-400" /> : <Copy className="h-3 w-3" />}
-            {league.inviteCode}
-          </button>
+          {user && league.ownerId !== user.id && (
+            <div className="flex gap-2">
+              {!confirmingLeave ? (
+                <button
+                  onClick={() => setConfirmingLeave(true)}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-zinc-800 hover:bg-red-900/30 border border-zinc-700 hover:border-red-600/50 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Salir de la liga
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleLeaveLeague}
+                    disabled={leavingLeague}
+                    className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    {leavingLeague ? '...' : '¿Seguro? Sí, salir'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmingLeave(false)}
+                    disabled={leavingLeague}
+                    className="flex-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
