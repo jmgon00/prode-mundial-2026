@@ -197,29 +197,29 @@ export default function DashboardPage() {
                 <button
                   key={league.id}
                   onClick={() => router.push(`/leagues/${league.id}`)}
-                  className="w-full bg-white border border-sky-100 hover:border-sky-300 rounded-2xl p-5 flex flex-col gap-3 transition-all active:scale-[0.97] text-left group shadow-sm hover:shadow-md hover:shadow-sky-100"
+                  className="w-full bg-white/8 border border-white/12 hover:border-sky-500/40 rounded-2xl p-5 flex flex-col gap-3 transition-all active:scale-[0.97] text-left group hover:shadow-lg hover:shadow-sky-900/20 backdrop-blur-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-bold text-zinc-900 text-base leading-tight">{league.name}</p>
-                    <ChevronRight className="h-4 w-4 text-zinc-400 group-hover:text-sky-500 transition-colors flex-shrink-0 mt-0.5" />
+                    <p className="font-bold text-white text-base leading-tight">{league.name}</p>
+                    <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-sky-400 transition-colors flex-shrink-0 mt-0.5" />
                   </div>
                   <div className="flex items-center gap-4">
                     {myPoints > 0 ? (
                       <>
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-3xl font-black text-zinc-900 leading-none">{myRank}°</span>
+                          <span className="text-3xl font-black text-white leading-none">{myRank}°</span>
                           <span className="text-zinc-400 text-sm">de {memberCount}</span>
                         </div>
-                        <div className="w-px h-7 bg-zinc-200" />
+                        <div className="w-px h-7 bg-white/15" />
                         <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-black text-amber-500 leading-none">{myPoints}</span>
+                          <span className="text-2xl font-black text-amber-400 leading-none">{myPoints}</span>
                           <span className="text-zinc-400 text-xs">pts</span>
                         </div>
                       </>
                     ) : (
-                      <span className="text-zinc-400 text-sm">Sin partidos jugados aún</span>
+                      <span className="text-zinc-500 text-sm">Sin partidos jugados aún</span>
                     )}
-                    <span className="ml-auto flex items-center gap-1 text-xs text-zinc-400">
+                    <span className="ml-auto flex items-center gap-1 text-xs text-zinc-500">
                       <Users className="h-3 w-3" />
                       {memberCount}
                     </span>
