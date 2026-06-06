@@ -8,4 +8,4 @@ cmds = ["npm install --include=dev"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npx prisma migrate deploy && node dist/app.js"
+cmd = "npm run db:migrate && npm start"
