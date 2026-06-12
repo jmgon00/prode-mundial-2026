@@ -164,11 +164,38 @@ const matches = [
   { ...KO, stage: Stage.FINAL, homeTeam: 'Ganador SF-1', awayTeam: 'Ganador SF-2', matchDate: new Date('2026-07-19T22:00:00Z') },
 ]
 
+const FUN_BET_CATEGORIES = [
+  { id: 'fbc-01', description: 'Resultado exacto 1-0 o 2-0' },
+  { id: 'fbc-02', description: 'Resultado exacto 0-1 o 0-2' },
+  { id: 'fbc-03', description: 'Resultado exacto 1-1' },
+  { id: 'fbc-04', description: 'Gol antes del minuto 15' },
+  { id: 'fbc-05', description: 'Gol entre minutos 15-45' },
+  { id: 'fbc-06', description: 'Gol entre minutos 45-65' },
+  { id: 'fbc-07', description: 'Gol entre minutos 65-90' },
+  { id: 'fbc-08', description: 'Un equipo metió 3+ goles' },
+  { id: 'fbc-09', description: 'Tarjeta roja en el partido' },
+  { id: 'fbc-10', description: 'Penalti convertido' },
+  { id: 'fbc-11', description: 'Definición por penales' },
+  { id: 'fbc-12', description: 'El partido va a prórroga' },
+  { id: 'fbc-13', description: 'Gol de Argentina (si Argentina juega)' },
+  { id: 'fbc-14', description: 'Expulsión y gol en mismo partido' },
+]
+
 async function main() {
   console.log(`Insertando ${matches.length} partidos...`)
   await prisma.match.deleteMany()
   await prisma.match.createMany({ data: matches })
   console.log(`✓ ${matches.length} partidos insertados`)
+
+  console.log('Insertando categorías de apuestas locas...')
+  for (const cat of FUN_BET_CATEGORIES) {
+    await prisma.funBetCategory.upsert({
+      where: { id: cat.id },
+      create: { id: cat.id, description: cat.description, points: 1 },
+      update: { description: cat.description },
+    })
+  }
+  console.log(`✓ ${FUN_BET_CATEGORIES.length} categorías insertadas`)
 }
 
 main()

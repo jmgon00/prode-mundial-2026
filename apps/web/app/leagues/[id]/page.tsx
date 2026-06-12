@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
 import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, funBetsApi, BADGE_META } from '@/lib/api'
-import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats, FunBet, FunBetReveal } from '@/lib/api'
+import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats, FunBet, FunBetCategory, FunBetReveal } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Copy, Check, Trophy, Users, LogOut } from 'lucide-react'
@@ -46,7 +46,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [fetching, setFetching] = useState(true)
   const [codeCopied, setCodeCopied] = useState(false)
   const [stats, setStats] = useState<UserStats | null>(null)
-  const [funBets, setFunBets] = useState<Map<string, FunBet>>(new Map())
+  const [funBets, setFunBets] = useState<Map<string, FunBet[]>>(new Map())
+  const [categories, setCategories] = useState<FunBetCategory[]>([])
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   const [leavingLeague, setLeavingLeague] = useState(false)
 
@@ -59,15 +60,24 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         rankingApi.get(id),
         badgeApi.listByLeague(id),
         statsApi.league(id),
-        funBetsApi.listByLeague(id).catch(() => []),
-      ]).then(([l, m, preds, r, b, s, fb]) => {
+        funBetsApi.listByLeague(id).catch(() => [] as FunBet[]),
+        funBetsApi.categories().catch(() => [] as FunBetCategory[]),
+      ]).then(([l, m, preds, r, b, s, fb, cats]) => {
         setLeague(l)
         setMatches(m)
         setPredictions(new Map(preds.map((p) => [p.matchId, p])))
         setRanking(r)
         setBadges(b)
         setStats(s)
-        setFunBets(new Map((fb as any[]).map((f) => [f.matchId, f])))
+        setCategories(cats)
+        // Agrupar apuestas por matchId
+        const fbMap = new Map<string, FunBet[]>()
+        for (const f of fb) {
+          const arr = fbMap.get(f.matchId) ?? []
+          arr.push(f)
+          fbMap.set(f.matchId, arr)
+        }
+        setFunBets(fbMap)
       }).finally(() => setFetching(false))
     }
   }, [user, isLoading, id])
@@ -82,10 +92,28 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     }
   }
 
-  async function saveFunBet(matchId: string, prediction: string) {
+  async function addFunBet(matchId: string, categoryId: string): Promise<FunBet | null> {
     try {
-      const fb = await funBetsApi.upsert({ matchId, leagueId: id, prediction })
-      setFunBets((prev) => new Map(prev).set(matchId, fb))
+      const fb = await funBetsApi.create({ matchId, leagueId: id, categoryId })
+      setFunBets((prev) => {
+        const next = new Map(prev)
+        next.set(matchId, [...(next.get(matchId) ?? []), fb])
+        return next
+      })
+      return fb
+    } catch (err: any) {
+      throw err
+    }
+  }
+
+  async function removeFunBet(betId: string, matchId: string) {
+    try {
+      await funBetsApi.remove(betId)
+      setFunBets((prev) => {
+        const next = new Map(prev)
+        next.set(matchId, (next.get(matchId) ?? []).filter((f) => f.id !== betId))
+        return next
+      })
     } catch { /* silently ignore */ }
   }
 
@@ -275,13 +303,13 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                           <span className="text-xs text-zinc-600">Grupo {letter}</span>
                         </div>
                         {groupMatches.map((match) => (
-                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBet={funBets.get(match.id)} onSaveFunBet={saveFunBet} />
+                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
                         ))}
                       </div>
                     ))
                   ) : (
                     stageMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBet={funBets.get(match.id)} onSaveFunBet={saveFunBet} />
+                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
                     ))
                   )}
                 </div>
@@ -626,15 +654,17 @@ function useCountdown(targetDate: string) {
 }
 
 function MatchCard({
-  match, prediction, onSave, leagueId, currentUserId, funBet, onSaveFunBet,
+  match, prediction, onSave, leagueId, currentUserId, funBets, categories, onAddFunBet, onRemoveFunBet,
 }: {
   match: Match
   prediction?: Prediction
   onSave: (matchId: string, home: number, away: number) => void
   leagueId: string
   currentUserId: string
-  funBet?: FunBet
-  onSaveFunBet: (matchId: string, prediction: string) => void
+  funBets: FunBet[]
+  categories: FunBetCategory[]
+  onAddFunBet: (matchId: string, categoryId: string) => Promise<FunBet | null>
+  onRemoveFunBet: (betId: string, matchId: string) => void
 }) {
   const [home, setHome] = useState(prediction?.predictedHomeScore?.toString() ?? '')
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
@@ -643,21 +673,29 @@ function MatchCard({
   const [showRivals, setShowRivals] = useState(false)
   const [rivals, setRivals] = useState<MatchPrediction[] | null>(null)
   const [loadingRivals, setLoadingRivals] = useState(false)
-  const [funBetText, setFunBetText] = useState(funBet?.prediction ?? '')
-  const [funBetSaved, setFunBetSaved] = useState(!!funBet)
-  const [savingFunBet, setSavingFunBet] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [addingFunBet, setAddingFunBet] = useState(false)
+  const [funBetError, setFunBetError] = useState('')
   const [showFunBetReveals, setShowFunBetReveals] = useState(false)
   const [funBetReveals, setFunBetReveals] = useState<FunBetReveal[] | null>(null)
   const [loadingFunBetReveals, setLoadingFunBetReveals] = useState(false)
 
-  async function handleSaveFunBet() {
-    if (!funBetText.trim()) return
-    setSavingFunBet(true)
+  // Categorías ya elegidas para este partido
+  const usedCategoryIds = new Set(funBets.map((f) => f.categoryId))
+  const availableCategories = categories.filter((c) => !usedCategoryIds.has(c.id))
+
+  async function handleAddFunBet() {
+    if (!selectedCategoryId) return
+    setAddingFunBet(true)
+    setFunBetError('')
     try {
-      await onSaveFunBet(match.id, funBetText.trim())
-      setFunBetSaved(true)
-    } catch { /* silently ignore */ }
-    finally { setSavingFunBet(false) }
+      await onAddFunBet(match.id, selectedCategoryId)
+      setSelectedCategoryId('')
+    } catch (err: any) {
+      setFunBetError(err.message ?? 'Error al agregar apuesta')
+    } finally {
+      setAddingFunBet(false)
+    }
   }
 
   async function toggleFunBetReveals() {
@@ -792,37 +830,67 @@ function MatchCard({
         )}
       </div>
 
-      {/* Apuesta loca */}
+      {/* Apuestas locas */}
       <div className="border-t border-white/5 px-4 py-3 space-y-2">
-        <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">🎲 Apuesta loca</p>
-        {canPredict ? (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={funBetText}
-              onChange={(e) => { setFunBetText(e.target.value); setFunBetSaved(false) }}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveFunBet() }}
-              placeholder="Ej: habrá 3 expulsados, habrá penal..."
-              maxLength={300}
-              className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:border-sky-500/50 focus:outline-none transition-colors"
-            />
-            <button
-              onClick={handleSaveFunBet}
-              disabled={savingFunBet || !funBetText.trim()}
-              className={cn(
-                'flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-40',
-                funBetSaved
-                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                  : 'bg-sky-600/30 text-sky-300 border border-sky-500/30 hover:bg-sky-600/50',
-              )}
-            >
-              {savingFunBet ? '...' : funBetSaved ? '✓' : 'Guardar'}
-            </button>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">🎲 Apuestas locas</p>
+          <span className={cn(
+            'text-xs font-mono px-1.5 py-0.5 rounded-md',
+            funBets.length >= 3 ? 'bg-sky-500/20 text-sky-400' : 'bg-zinc-800 text-zinc-500',
+          )}>
+            {funBets.length}/3
+          </span>
+        </div>
+
+        {/* Lista de apuestas actuales */}
+        {funBets.length > 0 && (
+          <div className="space-y-1.5">
+            {funBets.map((fb) => (
+              <div key={fb.id} className="flex items-center gap-2 bg-sky-500/8 border border-sky-500/15 rounded-lg px-2.5 py-1.5">
+                <span className="text-xs text-sky-300 flex-1 min-w-0 truncate">
+                  {fb.category?.description ?? categories.find(c => c.id === fb.categoryId)?.description ?? fb.categoryId}
+                </span>
+                {fb.pointsEarned !== null && fb.pointsEarned !== undefined ? (
+                  <span className="text-xs font-bold text-sky-400 flex-shrink-0">+{fb.pointsEarned} pt</span>
+                ) : canPredict ? (
+                  <button
+                    onClick={() => onRemoveFunBet(fb.id, match.id)}
+                    className="text-zinc-600 hover:text-red-400 text-xs transition-colors flex-shrink-0"
+                  >✕</button>
+                ) : null}
+              </div>
+            ))}
           </div>
-        ) : funBetText ? (
-          <p className="text-xs text-zinc-400 italic">"{funBetText}"</p>
-        ) : (
-          <p className="text-xs text-zinc-600 italic">No apostaste nada raro</p>
+        )}
+
+        {/* Agregar nueva apuesta */}
+        {canPredict && funBets.length < 3 && categories.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => { setSelectedCategoryId(e.target.value); setFunBetError('') }}
+                className="flex-1 bg-zinc-800/60 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-sky-500/50 focus:outline-none transition-colors appearance-none"
+              >
+                <option value="">Elegí una opción...</option>
+                {availableCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.description}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddFunBet}
+                disabled={addingFunBet || !selectedCategoryId}
+                className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-600/30 text-sky-300 border border-sky-500/30 hover:bg-sky-600/50 transition-all disabled:opacity-40"
+              >
+                {addingFunBet ? '...' : 'Agregar'}
+              </button>
+            </div>
+            {funBetError && <p className="text-xs text-red-400">{funBetError}</p>}
+          </div>
+        )}
+
+        {!canPredict && funBets.length === 0 && (
+          <p className="text-xs text-zinc-600 italic">No hiciste apuestas locas en este partido</p>
         )}
       </div>
 
@@ -839,11 +907,11 @@ function MatchCard({
           {showFunBetReveals && funBetReveals && (
             <div className="pb-3 px-3 space-y-1.5">
               {funBetReveals.length === 0 ? (
-                <p className="text-zinc-600 text-xs text-center py-2">Nadie apostó nada raro</p>
+                <p className="text-zinc-600 text-xs text-center py-2">Nadie hizo apuestas locas</p>
               ) : (
-                funBetReveals.map((fb) => (
-                  <div key={fb.userId} className={cn(
-                    'flex items-start gap-2 rounded-lg px-2.5 py-2 text-xs',
+                funBetReveals.map((fb, i) => (
+                  <div key={`${fb.userId}-${fb.categoryId}-${i}`} className={cn(
+                    'flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs',
                     fb.userId === currentUserId ? 'bg-sky-500/10 border border-sky-500/20' : 'bg-white/3',
                   )}>
                     <span className="text-base leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
@@ -851,8 +919,13 @@ function MatchCard({
                       <span className={cn('font-semibold', fb.userId === currentUserId ? 'text-sky-300' : 'text-zinc-300')}>
                         {fb.username}{fb.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
                       </span>
-                      <p className="text-zinc-400 mt-0.5 italic">"{fb.prediction}"</p>
+                      <p className="text-zinc-400 mt-0.5">{fb.description}</p>
                     </div>
+                    {fb.pointsEarned !== null && fb.pointsEarned !== undefined ? (
+                      <span className="text-xs font-bold text-sky-400 flex-shrink-0">+{fb.pointsEarned} pt</span>
+                    ) : (
+                      <span className="text-xs text-zinc-600 flex-shrink-0">—</span>
+                    )}
                   </div>
                 ))
               )}

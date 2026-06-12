@@ -418,8 +418,8 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
 
   async function handleAward(id: string) {
     try {
-      await adminApi.awardFunBet(id)
-      setFunBets((prev) => prev?.map((fb) => fb.id === id ? { ...fb, pointsEarned: 5 } : fb) ?? null)
+      const { pointsEarned } = await adminApi.awardFunBet(id)
+      setFunBets((prev) => prev?.map((fb) => fb.id === id ? { ...fb, pointsEarned } : fb) ?? null)
     } catch (err: any) { alert(err.message) }
   }
 
@@ -570,7 +570,7 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-semibold text-zinc-300">{fb.username}</span>
                       <span className="text-xs text-zinc-600 ml-1">· {fb.leagueName}</span>
-                      <p className="text-xs text-zinc-400 italic mt-0.5">"{fb.prediction}"</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{fb.description}</p>
                     </div>
                     {fb.pointsEarned !== null ? (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -588,7 +588,7 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
                         className="flex-shrink-0 flex items-center gap-1 text-xs bg-sky-600/20 hover:bg-sky-600/40 text-sky-400 border border-sky-500/30 px-2 py-1 rounded-lg transition-all"
                       >
                         <Zap className="h-3 w-3" />
-                        +5 pts
+                        +1 pt
                       </button>
                     )}
                   </div>

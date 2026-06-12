@@ -177,23 +177,40 @@ export const userApi = {
 }
 
 // --- Fun Bets ---
+export interface FunBetCategory {
+  id: string
+  description: string
+  points: number
+}
+
 export interface FunBet {
   id: string
+  userId: string
   matchId: string
   leagueId: string
-  prediction: string
+  categoryId: string
+  pointsEarned?: number | null
+  createdAt: string
+  updatedAt: string
+  category?: FunBetCategory
 }
 
 export interface FunBetReveal {
   userId: string
   username: string
   avatarUrl: string | null
-  prediction: string
+  categoryId: string
+  description: string
+  pointsEarned?: number | null
 }
 
 export const funBetsApi = {
-  upsert: (data: { matchId: string; leagueId: string; prediction: string }) =>
+  categories: () =>
+    api.get<FunBetCategory[]>('/api/funbets/categories'),
+  create: (data: { matchId: string; leagueId: string; categoryId: string }) =>
     api.post<FunBet>('/api/funbets', data),
+  remove: (id: string) =>
+    api.delete<{ message: string }>(`/api/funbets/${id}`),
   listByLeague: (leagueId: string) =>
     api.get<FunBet[]>(`/api/funbets/league/${leagueId}`),
   byMatch: (matchId: string, leagueId: string) =>
@@ -283,7 +300,8 @@ export interface AdminFunBet {
   avatarUrl: string | null
   leagueId: string
   leagueName: string
-  prediction: string
+  categoryId: string
+  description: string
   pointsEarned: number | null
 }
 

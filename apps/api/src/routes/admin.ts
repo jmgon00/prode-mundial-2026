@@ -217,41 +217,45 @@ router.get('/funbets/:matchId', requireAuth, requireAdmin, async (req, res, next
     const funBets = await prisma.funBet.findMany({
       where: { matchId: req.params.matchId },
       include: {
-        user: { select: { id: true, username: true, avatarUrl: true } },
-        league: { select: { id: true, name: true } },
+        user:     { select: { id: true, username: true, avatarUrl: true } },
+        league:   { select: { id: true, name: true } },
+        category: { select: { id: true, description: true, points: true } },
       },
       orderBy: { createdAt: 'asc' },
     })
     res.json(funBets.map((fb) => ({
-      id: fb.id,
-      userId: fb.userId,
-      username: fb.user.username,
-      avatarUrl: fb.user.avatarUrl,
-      leagueId: fb.leagueId,
-      leagueName: fb.league.name,
-      prediction: fb.prediction,
+      id:          fb.id,
+      userId:      fb.userId,
+      username:    fb.user.username,
+      avatarUrl:   fb.user.avatarUrl,
+      leagueId:    fb.leagueId,
+      leagueName:  fb.league.name,
+      categoryId:  fb.categoryId,
+      description: fb.category.description,
       pointsEarned: fb.pointsEarned,
     })))
   } catch (err) { next(err) }
 })
 
-const FUN_BET_POINTS = 5
-
 // Otorgar puntos a una apuesta loca
 router.patch('/funbets/:id/award', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const fb = await prisma.funBet.findUnique({ where: { id: req.params.id } })
+    const fb = await prisma.funBet.findUnique({
+      where: { id: req.params.id },
+      include: { category: { select: { points: true } } },
+    })
     if (!fb) return res.status(404).json({ message: 'Apuesta no encontrada' })
     if (fb.pointsEarned !== null) return res.status(400).json({ message: 'Ya tiene puntos asignados' })
 
+    const pts = fb.category.points
     await prisma.$transaction([
-      prisma.funBet.update({ where: { id: fb.id }, data: { pointsEarned: FUN_BET_POINTS } }),
+      prisma.funBet.update({ where: { id: fb.id }, data: { pointsEarned: pts } }),
       prisma.leagueMember.updateMany({
         where: { leagueId: fb.leagueId, userId: fb.userId },
-        data: { totalPoints: { increment: FUN_BET_POINTS } },
+        data: { totalPoints: { increment: pts } },
       }),
     ])
-    res.json({ message: `+${FUN_BET_POINTS} pts otorgados`, pointsEarned: FUN_BET_POINTS })
+    res.json({ message: `+${pts} pt${pts !== 1 ? 's' : ''} otorgado${pts !== 1 ? 's' : ''}`, pointsEarned: pts })
   } catch (err) { next(err) }
 })
 

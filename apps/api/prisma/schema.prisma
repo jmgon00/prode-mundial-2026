@@ -121,21 +121,31 @@ model Prediction {
   @@unique([userId, matchId, leagueId])
 }
 
+model FunBetCategory {
+  id          String   @id @default(uuid())
+  description String
+  points      Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  funBets FunBet[]
+}
+
 model FunBet {
-  id         String   @id @default(uuid())
-  userId     String
-  matchId    String
-  leagueId   String
-  prediction   String
+  id           String   @id @default(uuid())
+  userId       String
+  matchId      String
+  leagueId     String
+  categoryId   String
   pointsEarned Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match    Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  league   League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  category FunBetCategory @relation(fields: [categoryId], references: [id])
 
-  @@unique([userId, matchId, leagueId])
+  @@unique([userId, matchId, categoryId, leagueId])
 }
 
 model Badge {
