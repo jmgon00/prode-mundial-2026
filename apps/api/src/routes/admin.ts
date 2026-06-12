@@ -288,7 +288,7 @@ router.patch('/users/:id/reset-password', requireAuth, requireAdmin, async (req,
     const hashed = await bcrypt.hash(newPassword, 10)
     const user = await prisma.user.update({
       where: { id: req.params.id },
-      data: { password: hashed },
+      data: { passwordHash: hashed },
       select: { id: true, username: true, email: true },
     })
     res.json({ message: `Contraseña de ${user.username} reseteada correctamente`, user })
