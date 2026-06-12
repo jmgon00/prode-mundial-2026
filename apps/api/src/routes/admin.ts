@@ -7,6 +7,7 @@ import { Stage } from '@prisma/client'
 import { scoreMatch } from '../services/scoring'
 import { syncWorldCupResults, lastSync } from '../services/worldcup-sync'
 import { env } from '../config/env'
+import bcrypt from 'bcryptjs'
 
 const router = Router()
 
@@ -274,6 +275,23 @@ router.patch('/funbets/:id/revoke', requireAuth, requireAdmin, async (req, res, 
       }),
     ])
     res.json({ message: 'Puntos revocados', pointsEarned: null })
+  } catch (err) { next(err) }
+})
+
+// Resetear contraseña de un usuario
+router.patch('/users/:id/reset-password', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { newPassword } = z.object({
+      newPassword: z.string().min(6, 'Mínimo 6 caracteres'),
+    }).parse(req.body)
+
+    const hashed = await bcrypt.hash(newPassword, 10)
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { password: hashed },
+      select: { id: true, username: true, email: true },
+    })
+    res.json({ message: `Contraseña de ${user.username} reseteada correctamente`, user })
   } catch (err) { next(err) }
 })
 

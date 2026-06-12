@@ -299,6 +299,9 @@ export default function AdminPage() {
           )}
         </section>
 
+        {/* Sección: Gestión de usuarios */}
+        <UserManagementSection />
+
         {/* Sección: Reset de datos */}
         <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
           <div>
@@ -688,6 +691,99 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
               )}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function UserManagementSection() {
+  const [users, setUsers] = useState<{ id: string; username: string }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    adminApi.users()
+      .then(setUsers)
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+      <div>
+        <h2 className="text-white font-semibold">Gestión de usuarios</h2>
+        <p className="text-zinc-500 text-xs mt-0.5">Reseteá la contraseña de cualquier jugador</p>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-zinc-600">Cargando usuarios...</p>
+      ) : (
+        <div className="space-y-1.5">
+          {users.map((u) => (
+            <UserRow
+              key={u.id}
+              user={u}
+              expanded={expandedId === u.id}
+              onToggle={() => setExpandedId(expandedId === u.id ? null : u.id)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function UserRow({ user, expanded, onToggle }: {
+  user: { id: string; username: string }
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const [newPassword, setNewPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  async function handleReset() {
+    if (!newPassword) return
+    setLoading(true)
+    setMsg('')
+    try {
+      const { message } = await adminApi.resetPassword(user.id, newPassword)
+      setMsg(message)
+      setNewPassword('')
+    } catch (err: any) {
+      setMsg(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800 transition-colors"
+      >
+        <span className="text-sm text-zinc-300 font-medium">@{user.username}</span>
+        <span className="text-xs text-zinc-600">{expanded ? '▲' : '▼'}</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-zinc-700/50 px-3 py-3 space-y-2">
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Nueva contraseña (mín. 6 caracteres)"
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-sky-500 outline-none"
+          />
+          <button
+            onClick={handleReset}
+            disabled={loading || newPassword.length < 6}
+            className="w-full bg-sky-700 hover:bg-sky-600 text-white text-sm font-semibold py-2 rounded-lg transition-all disabled:opacity-40"
+          >
+            {loading ? 'Reseteando...' : 'Resetear contraseña'}
+          </button>
+          {msg && <p className="text-xs text-zinc-400 text-center">{msg}</p>}
         </div>
       )}
     </div>

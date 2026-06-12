@@ -295,6 +295,8 @@ export const adminApi = {
   allLeagues: () => api.get<{ id: string; name: string }[]>('/api/admin/leagues'),
   createManualFunBet: (data: { userId: string; leagueId: string; matchId: string; categoryId: string }) =>
     api.post<AdminFunBet>('/api/admin/funbets/manual', data),
+  resetPassword: (userId: string, newPassword: string) =>
+    api.patch<{ message: string }>(`/api/admin/users/${userId}/reset-password`, { newPassword }),
 }
 
 export interface AdminFunBet {
