@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(node -e ' *)",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npm run *)",
+      "Bash(npx prisma *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell([System.Convert]::ToHexString\\([System.Security.Cryptography.RandomNumberGenerator]::GetBytes\\(32\\)\\))",
+      "Bash(node *)",
+      "PowerShell(head *)",
+      "Bash(git reset *)",
+      "Bash(curl -s https://prode-mundial-2026-production.up.railway.app/api/auth/me)",
+      "Bash(curl -s https://prode-mundial-2026-production.up.railway.app/api/auth/me -w \"\\\\nStatus: %{http_code}\\\\n\")",
+      "Bash(curl *)",
+      "WebSearch"
+    ]
+  }
+}

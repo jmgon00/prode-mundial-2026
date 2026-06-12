@@ -21,8 +21,9 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.get('/health', (_req, res) => res.json({ ok: true }))
+app.get('/health', (_req, res) => res.json({ status: 'ok', environment: env.NODE_ENV }))
 
+console.log('[startup] Registrando rutas...')
 app.use('/api/auth', authRoutes)
 app.use('/api/leagues', leagueRoutes)
 app.use('/api/matches', matchRoutes)
@@ -34,11 +35,12 @@ app.use('/api/badges', badgeRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/funbets', funBetsRoutes)
 app.use('/api/groups', groupsRoutes)
+console.log('[startup] Rutas registradas OK')
 
 app.use(errorHandler)
 
 app.listen(env.PORT, () => {
-  console.log(`Backend corriendo en http://localhost:${env.PORT}`)
+  console.log(`[startup] Backend corriendo en http://localhost:${env.PORT} (${env.NODE_ENV})`)
   // Auto-sync con worldcup26.ir cada 3 minutos
   setInterval(() => {
     syncWorldCupResults().catch((err) => console.error('[auto-sync] Error:', err.message))
