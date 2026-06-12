@@ -936,7 +936,7 @@ function MatchCard({
             {funBets.map((fb) => (
               <div key={fb.id} className="flex items-center gap-2 bg-sky-500/8 border border-sky-500/15 rounded-lg px-2.5 py-1.5">
                 <span className="text-xs text-sky-300 flex-1 min-w-0 truncate">
-                  {fb.category?.description ?? categories.find(c => c.id === fb.categoryId)?.description ?? fb.categoryId}
+                  {(() => { const cat = fb.category ?? categories.find(c => c.id === fb.categoryId); return cat ? (cat.points >= 3 ? `⭐ ${cat.description}` : cat.description) : fb.categoryId })()}
                 </span>
                 {fb.pointsEarned !== null && fb.pointsEarned !== undefined ? (
                   <span className="text-xs font-bold text-sky-400 flex-shrink-0">+{fb.pointsEarned} pt</span>
@@ -962,7 +962,7 @@ function MatchCard({
               >
                 <option value="">Elegí una opción...</option>
                 {availableCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.description}</option>
+                  <option key={cat.id} value={cat.id}>{cat.points >= 3 ? `⭐ ${cat.description} (+3pts)` : cat.description}</option>
                 ))}
               </select>
               <button
