@@ -50,6 +50,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [categories, setCategories] = useState<FunBetCategory[]>([])
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   const [leavingLeague, setLeavingLeague] = useState(false)
+  const [viewMode, setViewMode] = useState<'date' | 'group'>('date')
+  const [showFinished, setShowFinished] = useState(false)
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -268,52 +270,138 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
         {/* Tab Partidos */}
         <TabsContent value="matches" className="mt-0">
-          <div className="max-w-lg mx-auto px-4 py-4 space-y-6 pb-safe">
+          <div className="max-w-lg mx-auto px-4 py-4 space-y-4 pb-safe">
             {matches.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-4xl mb-3">📅</p>
                 <p className="text-zinc-400">Aún no hay partidos cargados</p>
               </div>
             ) : (
-              Object.entries(matchesByStage).map(([stage, stageMatches]) => (
-                <div key={stage} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide',
-                      stage === 'GROUP'        && 'bg-sky-500/15 text-sky-400',
-                      stage === 'ROUND_OF_32'  && 'bg-blue-500/15 text-blue-400',
-                      stage === 'ROUND_OF_16'  && 'bg-violet-500/15 text-violet-400',
-                      stage === 'QUARTERFINAL' && 'bg-orange-500/15 text-orange-400',
-                      stage === 'SEMIFINAL'    && 'bg-amber-500/15 text-amber-400',
-                      stage === 'THIRD_PLACE'  && 'bg-zinc-500/15 text-zinc-400',
-                      stage === 'FINAL'        && 'bg-yellow-500/15 text-yellow-400',
-                    )}>
-                      {STAGE_LABELS[stage]}
-                    </span>
-                    <span className="text-xs text-zinc-600">{stageMatches.length} partidos</span>
-                  </div>
-
-                  {stage === 'GROUP' ? (
-                    Object.entries(groupsByLetter).map(([letter, groupMatches]) => (
-                      <div key={letter} className="space-y-2">
-                        <div className="flex items-center gap-2 px-1">
-                          <div className="w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                            <span className="text-xs font-bold text-zinc-400">{letter}</span>
-                          </div>
-                          <span className="text-xs text-zinc-600">Grupo {letter}</span>
-                        </div>
-                        {groupMatches.map((match) => (
-                          <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
-                        ))}
-                      </div>
-                    ))
-                  ) : (
-                    stageMatches.map((match) => (
-                      <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
-                    ))
-                  )}
+              <>
+                {/* Toggle vista */}
+                <div className="flex bg-zinc-900 border border-zinc-800 rounded-xl p-1 gap-1">
+                  <button
+                    onClick={() => setViewMode('date')}
+                    className={cn('flex-1 text-xs font-semibold py-1.5 rounded-lg transition-all',
+                      viewMode === 'date' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300')}
+                  >
+                    📅 Por fecha
+                  </button>
+                  <button
+                    onClick={() => setViewMode('group')}
+                    className={cn('flex-1 text-xs font-semibold py-1.5 rounded-lg transition-all',
+                      viewMode === 'group' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300')}
+                  >
+                    🗂 Por grupo
+                  </button>
                 </div>
-              ))
+
+                {viewMode === 'date' ? (
+                  // ── Vista por fecha ──
+                  (() => {
+                    const upcoming = [...matches]
+                      .filter((m) => m.status !== 'FINISHED')
+                      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
+                    const finished = [...matches]
+                      .filter((m) => m.status === 'FINISHED')
+                      .sort((a, b) => new Date(b.matchDate).getTime() - new Date(a.matchDate).getTime())
+
+                    const byDay = new Map<string, Match[]>()
+                    for (const m of upcoming) {
+                      const key = new Date(m.matchDate).toLocaleDateString('es-AR', {
+                        weekday: 'long', day: 'numeric', month: 'long',
+                      })
+                      byDay.set(key, [...(byDay.get(key) ?? []), m])
+                    }
+
+                    const matchLabel = (m: Match) =>
+                      m.stage === 'GROUP' && m.group
+                        ? `Grupo ${m.group}`
+                        : STAGE_LABELS[m.stage] ?? m.stage
+
+                    return (
+                      <div className="space-y-6">
+                        {[...byDay.entries()].map(([day, dayMatches]) => (
+                          <div key={day} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-zinc-400 capitalize">{day}</span>
+                              <div className="flex-1 h-px bg-zinc-800" />
+                            </div>
+                            {dayMatches.map((match) => (
+                              <div key={match.id} className="space-y-0.5">
+                                <p className="text-xs text-zinc-600 px-1">{matchLabel(match)}</p>
+                                <MatchCard match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+
+                        {finished.length > 0 && (
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => setShowFinished((v) => !v)}
+                              className="flex items-center gap-2 w-full group"
+                            >
+                              <span className="text-xs font-semibold text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                                {showFinished ? '▼' : '▶'} {finished.length} partidos finalizados
+                              </span>
+                              <div className="flex-1 h-px bg-zinc-800" />
+                            </button>
+                            {showFinished && finished.map((match) => (
+                              <div key={match.id} className="space-y-0.5">
+                                <p className="text-xs text-zinc-600 px-1">{matchLabel(match)}</p>
+                                <MatchCard match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()
+                ) : (
+                  // ── Vista por grupo ──
+                  <div className="space-y-6">
+                    {Object.entries(matchesByStage).map(([stage, stageMatches]) => (
+                      <div key={stage} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            'text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide',
+                            stage === 'GROUP'        && 'bg-sky-500/15 text-sky-400',
+                            stage === 'ROUND_OF_32'  && 'bg-blue-500/15 text-blue-400',
+                            stage === 'ROUND_OF_16'  && 'bg-violet-500/15 text-violet-400',
+                            stage === 'QUARTERFINAL' && 'bg-orange-500/15 text-orange-400',
+                            stage === 'SEMIFINAL'    && 'bg-amber-500/15 text-amber-400',
+                            stage === 'THIRD_PLACE'  && 'bg-zinc-500/15 text-zinc-400',
+                            stage === 'FINAL'        && 'bg-yellow-500/15 text-yellow-400',
+                          )}>
+                            {STAGE_LABELS[stage]}
+                          </span>
+                          <span className="text-xs text-zinc-600">{stageMatches.length} partidos</span>
+                        </div>
+                        {stage === 'GROUP' ? (
+                          Object.entries(groupsByLetter).map(([letter, groupMatches]) => (
+                            <div key={letter} className="space-y-2">
+                              <div className="flex items-center gap-2 px-1">
+                                <div className="w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-zinc-400">{letter}</span>
+                                </div>
+                                <span className="text-xs text-zinc-600">Grupo {letter}</span>
+                              </div>
+                              {groupMatches.map((match) => (
+                                <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
+                              ))}
+                            </div>
+                          ))
+                        ) : (
+                          stageMatches.map((match) => (
+                            <MatchCard key={match.id} match={match} prediction={predictions.get(match.id)} onSave={savePrediction} leagueId={id} currentUserId={user!.id} funBets={funBets.get(match.id) ?? []} categories={categories} onAddFunBet={addFunBet} onRemoveFunBet={removeFunBet} />
+                          ))
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </TabsContent>
