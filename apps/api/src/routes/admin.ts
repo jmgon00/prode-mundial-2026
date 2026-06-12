@@ -277,6 +277,66 @@ router.patch('/funbets/:id/revoke', requireAuth, requireAdmin, async (req, res, 
   } catch (err) { next(err) }
 })
 
+// Listar todos los usuarios (para formulario manual)
+router.get('/users', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true },
+      orderBy: { username: 'asc' },
+    })
+    res.json(users)
+  } catch (err) { next(err) }
+})
+
+// Listar todas las ligas (para formulario manual)
+router.get('/leagues', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const leagues = await prisma.league.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    })
+    res.json(leagues)
+  } catch (err) { next(err) }
+})
+
+// Crear apuesta loca manual (admin bypassa restricción de partido terminado)
+router.post('/funbets/manual', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { userId, leagueId, matchId, categoryId } = z.object({
+      userId:     z.string().min(1),
+      leagueId:   z.string().min(1),
+      matchId:    z.string().min(1),
+      categoryId: z.string().min(1),
+    }).parse(req.body)
+
+    const category = await prisma.funBetCategory.findUnique({ where: { id: categoryId } })
+    if (!category) return res.status(404).json({ message: 'Categoría no encontrada' })
+
+    const funBet = await prisma.funBet.upsert({
+      where: { userId_matchId_categoryId_leagueId: { userId, matchId, categoryId, leagueId } },
+      create: { userId, matchId, leagueId, categoryId },
+      update: {},
+      include: {
+        user:     { select: { username: true, avatarUrl: true } },
+        league:   { select: { name: true } },
+        category: { select: { description: true, points: true } },
+      },
+    })
+
+    res.status(201).json({
+      id:           funBet.id,
+      userId:       funBet.userId,
+      username:     funBet.user.username,
+      avatarUrl:    funBet.user.avatarUrl,
+      leagueId:     funBet.leagueId,
+      leagueName:   funBet.league.name,
+      categoryId:   funBet.categoryId,
+      description:  funBet.category.description,
+      pointsEarned: funBet.pointsEarned,
+    })
+  } catch (err) { next(err) }
+})
+
 // Estado de la última sincronización
 router.get('/sync-status', requireAuth, requireAdmin, (_req, res) => {
   res.json(lastSync)

@@ -291,6 +291,10 @@ export const adminApi = {
   funBetsByMatch: (matchId: string) => api.get<AdminFunBet[]>(`/api/admin/funbets/${matchId}`),
   awardFunBet: (id: string) => api.patch<{ message: string; pointsEarned: number }>(`/api/admin/funbets/${id}/award`, {}),
   revokeFunBet: (id: string) => api.patch<{ message: string; pointsEarned: null }>(`/api/admin/funbets/${id}/revoke`, {}),
+  users: () => api.get<{ id: string; username: string }[]>('/api/admin/users'),
+  allLeagues: () => api.get<{ id: string; name: string }[]>('/api/admin/leagues'),
+  createManualFunBet: (data: { userId: string; leagueId: string; matchId: string; categoryId: string }) =>
+    api.post<AdminFunBet>('/api/admin/funbets/manual', data),
 }
 
 export interface AdminFunBet {

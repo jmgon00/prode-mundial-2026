@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { adminApi, matchApi, StageStatus, Match, SyncResult, AdminFunBet } from '@/lib/api'
+import { adminApi, matchApi, StageStatus, Match, SyncResult, AdminFunBet, FunBetCategory, funBetsApi } from '@/lib/api'
 import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck, RefreshCw, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -373,6 +373,14 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
   const [showFunBets, setShowFunBets] = useState(false)
   const [funBets, setFunBets] = useState<AdminFunBet[] | null>(null)
   const [loadingFunBets, setLoadingFunBets] = useState(false)
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [manualUsers, setManualUsers] = useState<{ id: string; username: string }[]>([])
+  const [manualLeagues, setManualLeagues] = useState<{ id: string; name: string }[]>([])
+  const [manualCategories, setManualCategories] = useState<FunBetCategory[]>([])
+  const [manualUserId, setManualUserId] = useState('')
+  const [manualLeagueId, setManualLeagueId] = useState('')
+  const [manualCategoryId, setManualCategoryId] = useState('')
+  const [manualLoading, setManualLoading] = useState(false)
 
   async function handleSaveResult() {
     const h = parseInt(home)
@@ -428,6 +436,41 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
       await adminApi.revokeFunBet(id)
       setFunBets((prev) => prev?.map((fb) => fb.id === id ? { ...fb, pointsEarned: null } : fb) ?? null)
     } catch (err: any) { alert(err.message) }
+  }
+
+  async function openManualForm() {
+    if (!showManualForm && manualUsers.length === 0) {
+      try {
+        const [users, leagues, categories] = await Promise.all([
+          adminApi.users(),
+          adminApi.allLeagues(),
+          funBetsApi.categories(),
+        ])
+        setManualUsers(users)
+        setManualLeagues(leagues)
+        setManualCategories(categories)
+        if (users[0]) setManualUserId(users[0].id)
+        if (leagues[0]) setManualLeagueId(leagues[0].id)
+        if (categories[0]) setManualCategoryId(categories[0].id)
+      } catch (err: any) { alert(err.message); return }
+    }
+    setShowManualForm((v) => !v)
+  }
+
+  async function handleManualCreate() {
+    if (!manualUserId || !manualLeagueId || !manualCategoryId) return
+    setManualLoading(true)
+    try {
+      const newBet = await adminApi.createManualFunBet({
+        userId: manualUserId,
+        leagueId: manualLeagueId,
+        matchId: match.id,
+        categoryId: manualCategoryId,
+      })
+      setFunBets((prev) => prev ? [...prev, newBet] : [newBet])
+      setShowManualForm(false)
+    } catch (err: any) { alert(err.message) }
+    finally { setManualLoading(false) }
   }
 
   async function handleSetStatus(status: 'LIVE' | 'SCHEDULED') {
@@ -593,6 +636,55 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
                     )}
                   </div>
                 ))
+              )}
+
+              {/* Agregar apuesta manual */}
+              <button
+                onClick={openManualForm}
+                className="text-xs text-purple-500 hover:text-purple-400 flex items-center gap-1 mt-1 transition-colors"
+              >
+                <Zap className="h-3 w-3" />
+                {showManualForm ? 'Cancelar' : '+ Apuesta manual'}
+              </button>
+
+              {showManualForm && (
+                <div className="border border-purple-500/25 rounded-xl p-3 space-y-2 bg-purple-500/5">
+                  <p className="text-xs text-purple-400 font-medium">Nueva apuesta manual</p>
+                  <select
+                    value={manualUserId}
+                    onChange={(e) => setManualUserId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                  >
+                    {manualUsers.map((u) => (
+                      <option key={u.id} value={u.id}>{u.username}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={manualLeagueId}
+                    onChange={(e) => setManualLeagueId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                  >
+                    {manualLeagues.map((l) => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={manualCategoryId}
+                    onChange={(e) => setManualCategoryId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                  >
+                    {manualCategories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.description}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleManualCreate}
+                    disabled={manualLoading}
+                    className="w-full bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold py-1.5 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    {manualLoading ? 'Guardando...' : 'Agregar apuesta'}
+                  </button>
+                </div>
               )}
             </div>
           )}
