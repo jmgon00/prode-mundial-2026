@@ -303,6 +303,14 @@ export const adminApi = {
   },
   resolveReport: (id: string, data: { status?: 'OPEN' | 'RESOLVED'; adminNote?: string }) =>
     api.patch<Report>(`/api/admin/reports/${id}`, data),
+  awardCategory: (matchId: string, categoryId: string, occurred: boolean) =>
+    api.post<{ message: string; updated: number; occurred: boolean; pts: number }>(
+      '/api/admin/funbets/award-category', { matchId, categoryId, occurred }
+    ),
+  autoValidate: (matchId: string) =>
+    api.post<{ awarded: number; notOccurred: number; skipped: number; errors: string[] }>(
+      `/api/admin/funbets/${matchId}/auto-validate`, {}
+    ),
 }
 
 export interface AdminFunBet {

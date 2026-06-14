@@ -6,6 +6,7 @@ import { requireAdmin } from '../middleware/adminAuth'
 import { Stage } from '@prisma/client'
 import { scoreMatch } from '../services/scoring'
 import { syncWorldCupResults, lastSync } from '../services/worldcup-sync'
+import { autoValidateFunBets } from '../services/auto-validate-funbets'
 import { env } from '../config/env'
 import bcrypt from 'bcryptjs'
 
@@ -142,6 +143,12 @@ router.patch('/matches/:id/result', requireAuth, requireAdmin, async (req, res, 
     })
 
     await scoreMatch(match.id, homeScore, awayScore)
+
+    // Auto-validar apuestas locas en background (no bloquea la respuesta)
+    autoValidateFunBets(match.id).then((r) => {
+      console.log(`[auto-validate] ${match.homeTeam} vs ${match.awayTeam}: +${r.awarded} awarded, ${r.notOccurred} not occurred, ${r.skipped} skipped (especiales)`, r.errors.length ? r.errors : '')
+    }).catch((e) => console.error('[auto-validate] Error:', e.message))
+
     res.json(match)
   } catch (err) {
     next(err)
@@ -210,6 +217,61 @@ router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) =>
   } catch (err) {
     next(err)
   }
+})
+
+// Validación masiva por categoría: award o descarta todos los que apostaron esa categoría en ese partido
+router.post('/funbets/award-category', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { matchId, categoryId, occurred } = z.object({
+      matchId:    z.string().min(1),
+      categoryId: z.string().min(1),
+      occurred:   z.boolean(),
+    }).parse(req.body)
+
+    const category = await prisma.funBetCategory.findUnique({ where: { id: categoryId } })
+    if (!category) return res.status(404).json({ message: 'Categoría no encontrada' })
+
+    const funBets = await prisma.funBet.findMany({
+      where: { matchId, categoryId, pointsEarned: null },
+    })
+
+    if (funBets.length === 0) {
+      return res.json({ message: 'No hay apuestas pendientes para esta categoría', updated: 0 })
+    }
+
+    const pts = occurred ? category.points : 0
+
+    await prisma.$transaction([
+      prisma.funBet.updateMany({
+        where: { matchId, categoryId, pointsEarned: null },
+        data: { pointsEarned: pts },
+      }),
+      // Si ocurrió, sumar puntos a cada usuario en su liga
+      ...(occurred ? funBets.map((fb) =>
+        prisma.leagueMember.updateMany({
+          where: { leagueId: fb.leagueId, userId: fb.userId },
+          data: { totalPoints: { increment: pts } },
+        })
+      ) : []),
+    ])
+
+    res.json({
+      message: occurred
+        ? `+${pts} pts otorgados a ${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''}`
+        : `${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''} descartada${funBets.length !== 1 ? 's' : ''} (no ocurrió)`,
+      updated: funBets.length,
+      occurred,
+      pts,
+    })
+  } catch (err) { next(err) }
+})
+
+// Ejecutar auto-validación manualmente desde el panel admin
+router.post('/funbets/:matchId/auto-validate', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const result = await autoValidateFunBets(req.params.matchId)
+    res.json(result)
+  } catch (err) { next(err) }
 })
 
 // Ver apuestas locas de un partido (todas las ligas)

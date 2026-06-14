@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma'
 import { scoreMatch } from './scoring'
+import { autoValidateFunBets } from './auto-validate-funbets'
 
 const API_BASE = 'https://worldcup26.ir'
 
@@ -149,6 +150,10 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
           data: { homeScore, awayScore, status: 'FINISHED' },
         })
         await scoreMatch(match.id, homeScore, awayScore)
+        // Auto-validar apuestas locas en background
+        autoValidateFunBets(match.id).then((r) => {
+          console.log(`[auto-validate] ${homeEs} vs ${awayEs}: +${r.awarded} awarded, ${r.notOccurred} not occurred, ${r.skipped} especiales`, r.errors.length ? r.errors : '')
+        }).catch((e) => console.error('[auto-validate] sync error:', e.message))
         result.finished++
       } else if (now >= match.matchDate && match.status === 'SCHEDULED') {
         await prisma.match.update({ where: { id: match.id }, data: { status: 'LIVE' } })

@@ -379,6 +379,9 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
   const [showFunBets, setShowFunBets] = useState(false)
   const [funBets, setFunBets] = useState<AdminFunBet[] | null>(null)
   const [loadingFunBets, setLoadingFunBets] = useState(false)
+  const [autoValidating, setAutoValidating] = useState(false)
+  const [autoValidateResult, setAutoValidateResult] = useState<{ awarded: number; notOccurred: number; skipped: number; errors: string[] } | null>(null)
+  const [categoryLoading, setCategoryLoading] = useState<string | null>(null)
   const [showManualForm, setShowManualForm] = useState(false)
   const [manualUsers, setManualUsers] = useState<{ id: string; username: string }[]>([])
   const [manualLeagues, setManualLeagues] = useState<{ id: string; name: string }[]>([])
@@ -477,6 +480,29 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
       setShowManualForm(false)
     } catch (err: any) { alert(err.message) }
     finally { setManualLoading(false) }
+  }
+
+  async function handleAutoValidate() {
+    setAutoValidating(true)
+    setAutoValidateResult(null)
+    try {
+      const result = await adminApi.autoValidate(match.id)
+      setAutoValidateResult(result)
+      // Refrescar la lista de apuestas
+      const data = await adminApi.funBetsByMatch(match.id)
+      setFunBets(data)
+    } catch (err: any) { alert(err.message) }
+    finally { setAutoValidating(false) }
+  }
+
+  async function handleAwardCategory(categoryId: string, occurred: boolean) {
+    setCategoryLoading(`${categoryId}-${occurred}`)
+    try {
+      await adminApi.awardCategory(match.id, categoryId, occurred)
+      const data = await adminApi.funBetsByMatch(match.id)
+      setFunBets(data)
+    } catch (err: any) { alert(err.message) }
+    finally { setCategoryLoading(null) }
   }
 
   async function handleSetStatus(status: 'LIVE' | 'SCHEDULED') {
@@ -609,40 +635,110 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
           </button>
 
           {showFunBets && funBets && (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-2 space-y-3">
               {funBets.length === 0 ? (
                 <p className="text-xs text-zinc-600">Nadie apostó en este partido</p>
-              ) : (
-                funBets.map((fb) => (
-                  <div key={fb.id} className="flex items-center gap-2 bg-zinc-800/40 rounded-lg px-3 py-2">
-                    <span className="text-sm leading-none flex-shrink-0">{fb.avatarUrl ?? '🎲'}</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-semibold text-zinc-300">{fb.username}</span>
-                      <span className="text-xs text-zinc-600 ml-1">· {fb.leagueName}</span>
-                      <p className="text-xs text-zinc-400 mt-0.5">{fb.description}</p>
-                    </div>
-                    {fb.pointsEarned !== null ? (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-xs font-bold text-sky-400">+{fb.pointsEarned} pts</span>
-                        <button
-                          onClick={() => handleRevoke(fb.id)}
-                          className="text-xs text-zinc-600 hover:text-red-400 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
+              ) : (() => {
+                // Agrupar por categoría
+                const byCategory = new Map<string, { description: string; points: number; bets: AdminFunBet[] }>()
+                for (const fb of funBets) {
+                  if (!byCategory.has(fb.categoryId)) {
+                    byCategory.set(fb.categoryId, { description: fb.description, points: 0, bets: [] })
+                  }
+                  byCategory.get(fb.categoryId)!.bets.push(fb)
+                }
+
+                // Categorías especiales (no auto-validables)
+                const SPECIAL = ['fbc-09', 'fbc-10', 'fbc-11', 'fbc-12']
+
+                return (
+                  <div className="space-y-2">
+                    {/* Botón auto-validar */}
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleAward(fb.id)}
-                        className="flex-shrink-0 flex items-center gap-1 text-xs bg-sky-600/20 hover:bg-sky-600/40 text-sky-400 border border-sky-500/30 px-2 py-1 rounded-lg transition-all"
+                        onClick={handleAutoValidate}
+                        disabled={autoValidating}
+                        className="flex items-center gap-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
                       >
                         <Zap className="h-3 w-3" />
-                        +1 pt
+                        {autoValidating ? 'Validando...' : '⚡ Auto-validar estándar'}
                       </button>
+                    </div>
+
+                    {autoValidateResult && (
+                      <div className="bg-zinc-800/50 rounded-lg px-3 py-2 text-xs text-zinc-400">
+                        ✅ {autoValidateResult.awarded} premiadas · ❌ {autoValidateResult.notOccurred} descartadas · ⏳ {autoValidateResult.skipped} especiales pendientes
+                        {autoValidateResult.errors.length > 0 && (
+                          <p className="text-amber-400 mt-1">⚠ {autoValidateResult.errors.join(', ')}</p>
+                        )}
+                      </div>
                     )}
+
+                    {/* Vista por categoría */}
+                    {[...byCategory.entries()].map(([catId, { description, bets }]) => {
+                      const pending = bets.filter((b) => b.pointsEarned === null)
+                      const awarded = bets.filter((b) => b.pointsEarned !== null && b.pointsEarned > 0)
+                      const discarded = bets.filter((b) => b.pointsEarned === 0)
+                      const isSpecial = SPECIAL.includes(catId)
+                      const allDone = pending.length === 0
+
+                      return (
+                        <div key={catId} className={cn(
+                          'border rounded-xl p-3 space-y-2',
+                          allDone ? 'bg-zinc-800/20 border-zinc-700/30' : isSpecial ? 'bg-amber-500/5 border-amber-500/20' : 'bg-zinc-800/40 border-zinc-700/50'
+                        )}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <span className="text-xs font-semibold text-zinc-200">
+                                {isSpecial ? '⭐ ' : ''}{description}
+                              </span>
+                              <span className="text-xs text-zinc-600 ml-2">
+                                {bets.length} apuesta{bets.length !== 1 ? 's' : ''}
+                                {awarded.length > 0 && <span className="text-emerald-500"> · {awarded.length} ✅</span>}
+                                {discarded.length > 0 && <span className="text-zinc-600"> · {discarded.length} ❌</span>}
+                              </span>
+                            </div>
+                            {/* Botones Sí/No — solo si hay pendientes */}
+                            {pending.length > 0 && (
+                              <div className="flex gap-1.5 flex-shrink-0">
+                                <button
+                                  onClick={() => handleAwardCategory(catId, true)}
+                                  disabled={categoryLoading !== null}
+                                  className="text-xs bg-emerald-700/30 hover:bg-emerald-700/50 text-emerald-400 border border-emerald-600/30 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40"
+                                >
+                                  ✅ Sí
+                                </button>
+                                <button
+                                  onClick={() => handleAwardCategory(catId, false)}
+                                  disabled={categoryLoading !== null}
+                                  className="text-xs bg-red-700/20 hover:bg-red-700/40 text-red-400 border border-red-600/25 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40"
+                                >
+                                  ❌ No
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Usuarios que apostaron */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {bets.map((fb) => (
+                              <span key={fb.id} className={cn(
+                                'text-xs px-2 py-0.5 rounded-full border',
+                                fb.pointsEarned === null ? 'bg-zinc-700/50 border-zinc-600/50 text-zinc-300' :
+                                fb.pointsEarned > 0 ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' :
+                                'bg-zinc-800/50 border-zinc-700/30 text-zinc-600 line-through'
+                              )}>
+                                {fb.avatarUrl ?? ''} {fb.username}
+                                {fb.pointsEarned !== null && fb.pointsEarned > 0 && ` +${fb.pointsEarned}pts`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                ))
-              )}
+                )
+              })()}
 
               {/* Agregar apuesta manual */}
               <button
@@ -656,38 +752,20 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
               {showManualForm && (
                 <div className="border border-purple-500/25 rounded-xl p-3 space-y-2 bg-purple-500/5">
                   <p className="text-xs text-purple-400 font-medium">Nueva apuesta manual</p>
-                  <select
-                    value={manualUserId}
-                    onChange={(e) => setManualUserId(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
-                  >
-                    {manualUsers.map((u) => (
-                      <option key={u.id} value={u.id}>{u.username}</option>
-                    ))}
+                  <select value={manualUserId} onChange={(e) => setManualUserId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none">
+                    {manualUsers.map((u) => <option key={u.id} value={u.id}>{u.username}</option>)}
                   </select>
-                  <select
-                    value={manualLeagueId}
-                    onChange={(e) => setManualLeagueId(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
-                  >
-                    {manualLeagues.map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                  <select value={manualLeagueId} onChange={(e) => setManualLeagueId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none">
+                    {manualLeagues.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
                   </select>
-                  <select
-                    value={manualCategoryId}
-                    onChange={(e) => setManualCategoryId(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
-                  >
-                    {manualCategories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.description}</option>
-                    ))}
+                  <select value={manualCategoryId} onChange={(e) => setManualCategoryId(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none">
+                    {manualCategories.map((c) => <option key={c.id} value={c.id}>{c.description}</option>)}
                   </select>
-                  <button
-                    onClick={handleManualCreate}
-                    disabled={manualLoading}
-                    className="w-full bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold py-1.5 rounded-lg transition-all disabled:opacity-50"
-                  >
+                  <button onClick={handleManualCreate} disabled={manualLoading}
+                    className="w-full bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold py-1.5 rounded-lg transition-all disabled:opacity-50">
                     {manualLoading ? 'Guardando...' : 'Agregar apuesta'}
                   </button>
                 </div>

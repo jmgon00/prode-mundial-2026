@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   ADMIN_EMAIL: z.string().email().optional(),
+  API_FOOTBALL_KEY: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
