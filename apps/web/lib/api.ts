@@ -16,6 +16,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   })
 
+  // Token vencido o inválido → limpiar sesión y redirigir al login
+  if (res.status === 401 && path !== '/api/auth/login' && path !== '/api/auth/me') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+    throw new Error('Sesión vencida. Iniciá sesión nuevamente.')
+  }
+
   const data = await res.json()
   if (!res.ok) throw new Error(data.message ?? 'Error en la solicitud')
   return data as T
