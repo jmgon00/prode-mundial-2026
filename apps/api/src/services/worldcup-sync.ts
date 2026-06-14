@@ -138,22 +138,34 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
       }
 
       const match = await prisma.match.findFirst({
-        where: { homeTeam: homeEs, awayTeam: awayEs, status: { not: 'FINISHED' } },
+        where: {
+          homeTeam: homeEs,
+          awayTeam: awayEs,
+          OR: [
+            { status: { not: 'FINISHED' } },
+            { status: 'FINISHED', homeScore: null }, // partido marcado FINISHED pero sin score
+          ],
+        },
       })
       if (!match) continue
 
       if (game.finished === 'TRUE') {
         const homeScore = Number(game.home_score)
         const awayScore = Number(game.away_score)
+        if (isNaN(homeScore) || isNaN(awayScore)) continue
+
+        const wasAlreadyFinished = match.status === 'FINISHED'
         await prisma.match.update({
           where: { id: match.id },
           data: { homeScore, awayScore, status: 'FINISHED' },
         })
         await scoreMatch(match.id, homeScore, awayScore)
-        // Auto-validar apuestas locas en background
-        autoValidateFunBets(match.id).then((r) => {
-          console.log(`[auto-validate] ${homeEs} vs ${awayEs}: +${r.awarded} awarded, ${r.notOccurred} not occurred, ${r.skipped} especiales`, r.errors.length ? r.errors : '')
-        }).catch((e) => console.error('[auto-validate] sync error:', e.message))
+        // Auto-validar solo si no estaba ya finalizado (evitar doble validación)
+        if (!wasAlreadyFinished) {
+          autoValidateFunBets(match.id).then((r) => {
+            console.log(`[auto-validate] ${homeEs} vs ${awayEs}: +${r.awarded} awarded, ${r.notOccurred} not occurred, ${r.skipped} especiales`, r.errors.length ? r.errors : '')
+          }).catch((e) => console.error('[auto-validate] sync error:', e.message))
+        }
         result.finished++
       } else if (now >= match.matchDate && match.status === 'SCHEDULED') {
         await prisma.match.update({ where: { id: match.id }, data: { status: 'LIVE' } })
