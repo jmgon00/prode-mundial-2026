@@ -5,6 +5,9 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsx watch src/app.ts",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 ./node_modules/.bin/tsc",
     "start": "node dist/app.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
     "db:generate": "cross-env NODE_OPTIONS=--max-old-space-size=4096 prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
@@ -29,5 +32,8 @@
     "typescript": "^5.4.5",
     "zod": "^3.23.8"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@vitest/ui": "^4.1.8",
+    "vitest": "^4.1.8"
+  }
 }

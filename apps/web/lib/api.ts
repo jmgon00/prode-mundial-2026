@@ -297,6 +297,12 @@ export const adminApi = {
     api.post<AdminFunBet>('/api/admin/funbets/manual', data),
   resetPassword: (userId: string, newPassword: string) =>
     api.patch<{ message: string }>(`/api/admin/users/${userId}/reset-password`, { newPassword }),
+  reports: (status?: 'OPEN' | 'RESOLVED') => {
+    const qs = status ? `?status=${status}` : ''
+    return api.get<Report[]>(`/api/admin/reports${qs}`)
+  },
+  resolveReport: (id: string, data: { status?: 'OPEN' | 'RESOLVED'; adminNote?: string }) =>
+    api.patch<Report>(`/api/admin/reports/${id}`, data),
 }
 
 export interface AdminFunBet {
@@ -329,6 +335,27 @@ export interface VerdictEntry {
   reward: string | null
   penalty: string | null
 }
+
+// --- Reports ---
+export interface Report {
+  id: string
+  userId: string
+  description: string
+  page: string | null
+  status: 'OPEN' | 'RESOLVED'
+  adminNote: string | null
+  createdAt: string
+  user?: { id: string; username: string; avatarUrl: string | null }
+}
+
+export const reportsApi = {
+  create: (data: { description: string; page?: string }) =>
+    api.post<{ message: string; report: Report }>('/api/reports', data),
+}
+
+// reportes para admin ya están en adminApi:
+// adminApi.reports()       → GET /api/admin/reports
+// adminApi.resolveReport() → PATCH /api/admin/reports/:id
 
 export const rankingApi = {
   get: (leagueId: string) =>

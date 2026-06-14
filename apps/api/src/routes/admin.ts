@@ -355,6 +355,36 @@ router.post('/funbets/manual', requireAuth, requireAdmin, async (req, res, next)
   } catch (err) { next(err) }
 })
 
+// Listar todos los reportes
+router.get('/reports', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { status } = req.query
+    const reports = await prisma.report.findMany({
+      where: status ? { status: status as any } : undefined,
+      include: { user: { select: { id: true, username: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+    res.json(reports)
+  } catch (err) { next(err) }
+})
+
+// Actualizar estado / nota de un reporte
+router.patch('/reports/:id', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { status, adminNote } = z.object({
+      status:    z.enum(['OPEN', 'RESOLVED']).optional(),
+      adminNote: z.string().max(500).optional(),
+    }).parse(req.body)
+
+    const report = await prisma.report.update({
+      where: { id: req.params.id },
+      data: { ...(status && { status }), ...(adminNote !== undefined && { adminNote }) },
+      include: { user: { select: { id: true, username: true } } },
+    })
+    res.json(report)
+  } catch (err) { next(err) }
+})
+
 // Estado de la última sincronización
 router.get('/sync-status', requireAuth, requireAdmin, (_req, res) => {
   res.json(lastSync)

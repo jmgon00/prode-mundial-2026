@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, funBetsApi, BADGE_META } from '@/lib/api'
+import { leagueApi, matchApi, predictionApi, rankingApi, badgeApi, statsApi, funBetsApi, reportsApi, BADGE_META } from '@/lib/api'
 import type { League, Match, Prediction, RankingEntry, BadgeEntry, Penalty, VerdictEntry, MatchPrediction, UserStats, FunBet, FunBetCategory, FunBetReveal } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
@@ -52,6 +52,10 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [leavingLeague, setLeavingLeague] = useState(false)
   const [viewMode, setViewMode] = useState<'date' | 'group'>('date')
   const [showFinished, setShowFinished] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportText, setReportText] = useState('')
+  const [reportSending, setReportSending] = useState(false)
+  const [reportSent, setReportSent] = useState(false)
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -91,6 +95,21 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       navigator.share({ text }).catch(() => {})
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  }
+
+  async function handleSendReport() {
+    if (reportText.trim().length < 5) return
+    setReportSending(true)
+    try {
+      await reportsApi.create({ description: reportText.trim(), page: window.location.pathname })
+      setReportSent(true)
+      setReportText('')
+      setTimeout(() => { setShowReportModal(false); setReportSent(false) }, 2000)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setReportSending(false)
     }
   }
 
@@ -529,6 +548,58 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
           <PenaltiesTab league={league} userId={user!.id} onUpdate={setLeague} />
         </TabsContent>
       </Tabs>
+
+      {/* Botón flotante: Reportar problema */}
+      <button
+        onClick={() => setShowReportModal(true)}
+        className="fixed bottom-6 right-4 z-40 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-300 hover:text-white text-xs font-medium px-3 py-2 rounded-full shadow-lg transition-all flex items-center gap-1.5"
+      >
+        🐛 Reportar
+      </button>
+
+      {/* Modal de reporte */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div>
+              <p className="text-white font-semibold">Reportar un problema</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Contanos qué pasó y lo revisamos a la brevedad.</p>
+            </div>
+
+            {reportSent ? (
+              <div className="text-center py-4">
+                <p className="text-2xl mb-2">✅</p>
+                <p className="text-sm text-zinc-300">¡Reporte enviado! Gracias.</p>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={reportText}
+                  onChange={(e) => setReportText(e.target.value)}
+                  placeholder="Ej: No puedo guardar mi pronóstico del partido Argentina vs Francia..."
+                  rows={4}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-sky-500/50 focus:outline-none resize-none transition-colors"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowReportModal(false); setReportText('') }}
+                    className="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-400 text-sm py-2 rounded-xl transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSendReport}
+                    disabled={reportSending || reportText.trim().length < 5}
+                    className="flex-1 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-xl transition-colors"
+                  >
+                    {reportSending ? 'Enviando...' : 'Enviar'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

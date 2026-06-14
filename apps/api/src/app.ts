@@ -14,6 +14,7 @@ import badgeRoutes from './routes/badges'
 import statsRoutes from './routes/stats'
 import funBetsRoutes from './routes/funbets'
 import groupsRoutes from './routes/groups'
+import reportsRoutes from './routes/reports'
 import { syncWorldCupResults } from './services/worldcup-sync'
 
 const app = express()
@@ -35,6 +36,7 @@ app.use('/api/badges', badgeRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/funbets', funBetsRoutes)
 app.use('/api/groups', groupsRoutes)
+app.use('/api/reports', reportsRoutes)
 console.log('[startup] Rutas registradas OK')
 
 app.use(errorHandler)

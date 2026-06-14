@@ -20,6 +20,7 @@ model User {
   predictions       Prediction[]
   badges            Badge[]
   funBets           FunBet[]
+  reports           Report[]
 }
 
 model League {
@@ -166,3 +167,22 @@ enum BadgeType {
   DARK_HORSE
   WOODEN_SPOON
 }
+
+model Report {
+  id          String       @id @default(uuid())
+  userId      String
+  description String
+  page        String?
+  status      ReportStatus @default(OPEN)
+  adminNote   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+}
+

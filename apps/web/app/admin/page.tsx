@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useProtected } from '@/hooks/use-protected'
-import { adminApi, matchApi, StageStatus, Match, SyncResult, AdminFunBet, FunBetCategory, funBetsApi } from '@/lib/api'
+import { adminApi, matchApi, StageStatus, Match, SyncResult, AdminFunBet, FunBetCategory, funBetsApi, Report } from '@/lib/api'
 import { ArrowLeft, Lock, Unlock, CheckCircle, Circle, ChevronDown, ChevronUp, ShieldCheck, RefreshCw, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -301,6 +301,9 @@ export default function AdminPage() {
 
         {/* Sección: Gestión de usuarios */}
         <UserManagementSection />
+
+        {/* Sección: Reportes de usuarios */}
+        <ReportsSection />
 
         {/* Sección: Reset de datos */}
         <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
@@ -787,5 +790,154 @@ function UserRow({ user, expanded, onToggle }: {
         </div>
       )}
     </div>
+  )
+}
+
+function ReportsSection() {
+  const [reports, setReports] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('OPEN')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [noteText, setNoteText] = useState<Record<string, string>>({})
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    adminApi.reports(filter === 'ALL' ? undefined : filter as any)
+      .then(setReports)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [filter])
+
+  async function handleUpdate(id: string, status?: 'OPEN' | 'RESOLVED', note?: string) {
+    setActionLoading(id)
+    try {
+      const updated = await adminApi.resolveReport(id, {
+        ...(status && { status }),
+        ...(note !== undefined && { adminNote: note }),
+      })
+      setReports((prev) => prev.map((r) => r.id === id ? { ...r, ...updated } : r))
+      if (status === 'RESOLVED') setExpandedId(null)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const openCount = reports.filter((r) => r.status === 'OPEN').length
+
+  return (
+    <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-white font-semibold flex items-center gap-2">
+            🐛 Reportes de usuarios
+            {openCount > 0 && (
+              <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-2 py-0.5 rounded-full">
+                {openCount} nuevo{openCount !== 1 ? 's' : ''}
+              </span>
+            )}
+          </h2>
+          <p className="text-zinc-500 text-xs mt-0.5">Problemas reportados por los usuarios</p>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex gap-1.5">
+        {(['OPEN', 'RESOLVED', 'ALL'] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={cn(
+              'text-xs px-3 py-1 rounded-full border transition-colors',
+              filter === f
+                ? 'bg-sky-600/20 border-sky-500/40 text-sky-400'
+                : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'
+            )}
+          >
+            {f === 'OPEN' ? 'Abiertos' : f === 'RESOLVED' ? 'Resueltos' : 'Todos'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-zinc-600">Cargando reportes...</p>
+      ) : reports.length === 0 ? (
+        <p className="text-xs text-zinc-600 text-center py-4">
+          {filter === 'OPEN' ? '✅ No hay reportes abiertos' : 'Sin reportes'}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {reports.map((report) => (
+            <div key={report.id} className={cn(
+              'border rounded-xl overflow-hidden',
+              report.status === 'OPEN' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-zinc-800/30 border-zinc-700/50'
+            )}>
+              <button
+                onClick={() => setExpandedId(expandedId === report.id ? null : report.id)}
+                className="w-full flex items-start gap-3 px-3 py-3 text-left hover:bg-white/3 transition-colors"
+              >
+                <span className="text-base mt-0.5">{report.status === 'OPEN' ? '🔴' : '✅'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-zinc-300">@{report.user?.username ?? report.userId}</span>
+                    <span className="text-xs text-zinc-600">{new Date(report.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{report.description}</p>
+                  {report.page && <p className="text-xs text-zinc-600 mt-0.5">📍 {report.page}</p>}
+                </div>
+                <span className="text-zinc-600 text-xs flex-shrink-0">{expandedId === report.id ? '▲' : '▼'}</span>
+              </button>
+
+              {expandedId === report.id && (
+                <div className="border-t border-zinc-700/40 px-3 py-3 space-y-3">
+                  <p className="text-sm text-zinc-300 bg-zinc-800/50 rounded-lg px-3 py-2">{report.description}</p>
+
+                  {/* Nota admin */}
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-zinc-500">Nota de respuesta (opcional)</p>
+                    <textarea
+                      value={noteText[report.id] ?? report.adminNote ?? ''}
+                      onChange={(e) => setNoteText((p) => ({ ...p, [report.id]: e.target.value }))}
+                      placeholder="Ej: Revisado, el problema era X. Ya está solucionado."
+                      rows={2}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:border-sky-500/50 outline-none resize-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    {report.status === 'OPEN' ? (
+                      <button
+                        onClick={() => handleUpdate(report.id, 'RESOLVED', noteText[report.id])}
+                        disabled={actionLoading === report.id}
+                        className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        {actionLoading === report.id ? 'Guardando...' : '✅ Marcar resuelto'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpdate(report.id, 'OPEN')}
+                        disabled={actionLoading === report.id}
+                        className="flex-1 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-300 text-xs font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        Reabrir
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleUpdate(report.id, undefined, noteText[report.id] ?? '')}
+                      disabled={actionLoading === report.id}
+                      className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 border border-zinc-700 text-zinc-400 text-xs px-3 py-2 rounded-lg transition-colors"
+                    >
+                      Guardar nota
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
