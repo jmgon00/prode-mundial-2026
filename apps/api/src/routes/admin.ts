@@ -266,6 +266,47 @@ router.post('/funbets/award-category', requireAuth, requireAdmin, async (req, re
   } catch (err) { next(err) }
 })
 
+// Revertir categoría ya aplicada → devuelve puntos y resetea a null
+router.post('/funbets/revert-category', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { matchId, categoryId } = z.object({
+      matchId:    z.string().min(1),
+      categoryId: z.string().min(1),
+    }).parse(req.body)
+
+    // Buscar todas las apuestas ya resueltas (pointsEarned !== null)
+    const funBets = await prisma.funBet.findMany({
+      where: { matchId, categoryId, pointsEarned: { not: null } },
+    })
+
+    if (funBets.length === 0) {
+      return res.json({ message: 'No hay apuestas aplicadas para revertir', reverted: 0 })
+    }
+
+    await prisma.$transaction([
+      // Descontar puntos a quienes habían ganado (pointsEarned > 0)
+      ...funBets
+        .filter((fb) => (fb.pointsEarned ?? 0) > 0)
+        .map((fb) =>
+          prisma.leagueMember.updateMany({
+            where: { leagueId: fb.leagueId, userId: fb.userId },
+            data: { totalPoints: { decrement: fb.pointsEarned! } },
+          })
+        ),
+      // Resetear todas a null
+      prisma.funBet.updateMany({
+        where: { matchId, categoryId },
+        data: { pointsEarned: null },
+      }),
+    ])
+
+    res.json({
+      message: `${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''} revertida${funBets.length !== 1 ? 's' : ''} a pendiente`,
+      reverted: funBets.length,
+    })
+  } catch (err) { next(err) }
+})
+
 // Ejecutar auto-validación manualmente desde el panel admin
 router.post('/funbets/:matchId/auto-validate', requireAuth, requireAdmin, async (req, res, next) => {
   try {

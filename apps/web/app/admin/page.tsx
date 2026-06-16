@@ -495,6 +495,17 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
     finally { setAutoValidating(false) }
   }
 
+  async function handleRevertCategory(categoryId: string) {
+    if (!confirm('¿Revertir esta categoría? Se quitarán los puntos otorgados y volverá a estado pendiente.')) return
+    setCategoryLoading(`${categoryId}-revert`)
+    try {
+      await adminApi.revertCategory(match.id, categoryId)
+      const data = await adminApi.funBetsByMatch(match.id)
+      setFunBets(data)
+    } catch (err: any) { alert(err.message) }
+    finally { setCategoryLoading(null) }
+  }
+
   async function handleAwardCategory(categoryId: string, occurred: boolean) {
     setCategoryLoading(`${categoryId}-${occurred}`)
     try {
@@ -716,6 +727,16 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
                                   ❌ No
                                 </button>
                               </div>
+                            )}
+                            {/* Botón Revertir — cuando ya fue aplicada */}
+                            {allDone && bets.length > 0 && (
+                              <button
+                                onClick={() => handleRevertCategory(catId)}
+                                disabled={categoryLoading !== null}
+                                className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40 flex-shrink-0"
+                              >
+                                {categoryLoading === `${catId}-revert` ? '...' : '↩ Revertir'}
+                              </button>
                             )}
                           </div>
 

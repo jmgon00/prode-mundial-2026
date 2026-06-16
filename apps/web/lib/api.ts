@@ -315,6 +315,10 @@ export const adminApi = {
     api.post<{ message: string; updated: number; occurred: boolean; pts: number }>(
       '/api/admin/funbets/award-category', { matchId, categoryId, occurred }
     ),
+  revertCategory: (matchId: string, categoryId: string) =>
+    api.post<{ message: string; reverted: number }>(
+      '/api/admin/funbets/revert-category', { matchId, categoryId }
+    ),
   autoValidate: (matchId: string) =>
     api.post<{ awarded: number; notOccurred: number; skipped: number; errors: string[] }>(
       `/api/admin/funbets/${matchId}/auto-validate`, {}
