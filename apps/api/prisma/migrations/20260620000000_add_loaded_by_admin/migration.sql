@@ -1,0 +1,1 @@
+ALTER TABLE "Prediction" ADD COLUMN "loadedByAdmin" BOOLEAN NOT NULL DEFAULT false;

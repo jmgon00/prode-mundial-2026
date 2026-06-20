@@ -302,6 +302,9 @@ export default function AdminPage() {
         {/* Sección: Gestión de usuarios */}
         <UserManagementSection />
 
+        {/* Sección: Pronóstico retroactivo */}
+        <RetroactivePredictionSection />
+
         {/* Sección: Reportes de usuarios */}
         <ReportsSection />
 
@@ -888,6 +891,157 @@ function UserRow({ user, expanded, onToggle }: {
           {msg && <p className="text-xs text-zinc-400 text-center">{msg}</p>}
         </div>
       )}
+    </div>
+  )
+}
+
+function RetroactivePredictionSection() {
+  const [matches, setMatches] = useState<{ id: string; homeTeam: string; awayTeam: string; status: string; homeScore: number | null; awayScore: number | null }[]>([])
+  const [users, setUsers]     = useState<{ id: string; username: string }[]>([])
+  const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<{ ok: boolean; msg: string } | null>(null)
+
+  const [matchId,  setMatchId]  = useState('')
+  const [userId,   setUserId]   = useState('')
+  const [leagueId, setLeagueId] = useState('')
+  const [homeScore, setHomeScore] = useState('')
+  const [awayScore, setAwayScore] = useState('')
+
+  useEffect(() => {
+    adminApi.matches().then((all) =>
+      setMatches(all.filter((m) => m.status === 'LIVE' || m.status === 'FINISHED'))
+    ).catch(() => {})
+    adminApi.users().then(setUsers).catch(() => {})
+    adminApi.allLeagues().then(setLeagues).catch(() => {})
+  }, [])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!matchId || !userId || !leagueId || homeScore === '' || awayScore === '') return
+    setLoading(true)
+    setResult(null)
+    try {
+      const res = await adminApi.loadPredictionForUser({
+        matchId, userId, leagueId,
+        predictedHomeScore: Number(homeScore),
+        predictedAwayScore: Number(awayScore),
+      })
+      const pts = res.pointsAwarded ?? res.pointsEarned
+      setResult({ ok: true, msg: pts != null ? `✅ Cargado. Puntos otorgados: ${pts}` : '✅ Pronóstico cargado (se puntuará cuando termine el partido)' })
+      setMatchId(''); setUserId(''); setLeagueId(''); setHomeScore(''); setAwayScore('')
+    } catch (err: any) {
+      setResult({ ok: false, msg: `❌ ${err.message}` })
+    } finally { setLoading(false) }
+  }
+
+  const selectedMatch = matches.find((m) => m.id === matchId)
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 space-y-4">
+      <div>
+        <h2 className="text-white font-semibold">Pronóstico retroactivo</h2>
+        <p className="text-xs text-zinc-400 mt-0.5">
+          Cargá un pronóstico para un usuario que no pudo hacerlo a tiempo (solo partidos EN VIVO o FINALIZADOS).
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Partido */}
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-400">Partido</label>
+          <select
+            value={matchId}
+            onChange={(e) => setMatchId(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Seleccioná un partido —</option>
+            {matches.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.homeTeam} vs {m.awayTeam}
+                {m.status === 'FINISHED' && m.homeScore !== null ? ` (${m.homeScore}-${m.awayScore} FIN)` : ' (EN VIVO)'}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Usuario */}
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-400">Usuario</label>
+          <select
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Seleccioná un usuario —</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>{u.username}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Liga */}
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-400">Liga</label>
+          <select
+            value={leagueId}
+            onChange={(e) => setLeagueId(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Seleccioná una liga —</option>
+            {leagues.map((l) => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Scores */}
+        <div className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <label className="text-xs text-zinc-400">
+              {selectedMatch ? selectedMatch.homeTeam : 'Local'}
+            </label>
+            <input
+              type="number" min="0" max="20" value={homeScore}
+              onChange={(e) => setHomeScore(e.target.value)}
+              placeholder="0"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white text-center"
+            />
+          </div>
+          <div className="flex items-end pb-2 text-zinc-500 font-bold">-</div>
+          <div className="flex-1 space-y-1">
+            <label className="text-xs text-zinc-400">
+              {selectedMatch ? selectedMatch.awayTeam : 'Visitante'}
+            </label>
+            <input
+              type="number" min="0" max="20" value={awayScore}
+              onChange={(e) => setAwayScore(e.target.value)}
+              placeholder="0"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white text-center"
+            />
+          </div>
+        </div>
+
+        {selectedMatch?.status === 'FINISHED' && selectedMatch.homeScore !== null && (
+          <p className="text-xs text-zinc-500">
+            Resultado real: {selectedMatch.homeScore}-{selectedMatch.awayScore} — los puntos se calculan automáticamente.
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading || !matchId || !userId || !leagueId || homeScore === '' || awayScore === ''}
+          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium py-2 rounded-lg transition-all"
+        >
+          {loading ? 'Cargando...' : 'Cargar pronóstico'}
+        </button>
+
+        {result && (
+          <p className={`text-xs text-center ${result.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+            {result.msg}
+          </p>
+        )}
+      </form>
     </div>
   )
 }

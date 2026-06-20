@@ -319,6 +319,12 @@ export const adminApi = {
     api.post<{ message: string; reverted: number }>(
       '/api/admin/funbets/revert-category', { matchId, categoryId }
     ),
+  loadPredictionForUser: (data: {
+    matchId: string; userId: string; leagueId: string
+    predictedHomeScore: number; predictedAwayScore: number
+  }) => api.post<{ id: string; pointsEarned?: number | null; pointsAwarded?: number; loadedByAdmin: boolean }>(
+    '/api/predictions/admin-load', data
+  ),
   autoValidate: (matchId: string) =>
     api.post<{ awarded: number; notOccurred: number; skipped: number; errors: string[] }>(
       `/api/admin/funbets/${matchId}/auto-validate`, {}
