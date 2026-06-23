@@ -53,7 +53,6 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [viewMode, setViewMode] = useState<'date' | 'group'>('date')
   const [showFinished, setShowFinished] = useState(false)
   const [breakdown, setBreakdown] = useState<Map<string, BreakdownEntry>>(new Map())
-  const [expandedUser, setExpandedUser] = useState<string | null>(null)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportText, setReportText] = useState('')
   const [reportSending, setReportSending] = useState(false)
@@ -486,7 +485,6 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                 const userBadges = badges.filter((b) => b.userId === entry.userId)
                 const uniqueTypes = [...new Set(userBadges.map((b) => b.type))]
                 const bkd = breakdown.get(entry.userId)
-                const isExpanded = expandedUser === entry.userId
                 return (
                   <div
                     key={entry.userId}
@@ -498,10 +496,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                       idx > 2 && 'bg-zinc-900/60 border-white/6',
                     )}
                   >
-                    <div
-                      className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
-                      onClick={() => setExpandedUser(isExpanded ? null : entry.userId)}
-                    >
+                    <div className="flex items-center gap-3 px-4 py-3">
                       <span className="text-xl w-8 text-center flex-shrink-0">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (
                           <span className="text-sm font-bold text-zinc-500">{idx + 1}</span>
@@ -516,37 +511,26 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
                         {entry.role === 'OWNER' && (
                           <p className="text-xs text-sky-500 mt-0.5">Organizador</p>
                         )}
+                        {/* Desglose siempre visible */}
+                        {bkd && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-zinc-500">🎯 {bkd.predictionPoints}</span>
+                            <span className="text-zinc-700">·</span>
+                            <span className="text-xs text-zinc-500">⭐ {bkd.funBetPoints}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="flex items-center gap-1.5">
-                          <Trophy className="h-3.5 w-3.5 text-amber-400" />
-                          <span className={cn(
-                            'font-bold text-sm',
-                            idx === 0 && 'text-amber-400',
-                            idx > 0 && 'text-zinc-300',
-                          )}>
-                            {entry.totalPoints} pts
-                          </span>
-                        </div>
-                        <span className="text-zinc-600 text-xs">{isExpanded ? '▲' : '▼'}</span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Trophy className="h-3.5 w-3.5 text-amber-400" />
+                        <span className={cn(
+                          'font-bold text-sm',
+                          idx === 0 && 'text-amber-400',
+                          idx > 0 && 'text-zinc-300',
+                        )}>
+                          {entry.totalPoints} pts
+                        </span>
                       </div>
                     </div>
-
-                    {/* Desglose expandible */}
-                    {isExpanded && bkd && (
-                      <div className="px-4 pb-3 pt-0 border-t border-white/5 mt-0">
-                        <div className="flex gap-3 mt-2.5">
-                          <div className="flex-1 bg-zinc-800/60 rounded-lg px-3 py-2 text-center">
-                            <p className="text-xs text-zinc-500 mb-0.5">🎯 Pronósticos</p>
-                            <p className="text-base font-bold text-white">{bkd.predictionPoints} <span className="text-xs font-normal text-zinc-400">pts</span></p>
-                          </div>
-                          <div className="flex-1 bg-zinc-800/60 rounded-lg px-3 py-2 text-center">
-                            <p className="text-xs text-zinc-500 mb-0.5">⭐ Apuestas locas</p>
-                            <p className="text-base font-bold text-white">{bkd.funBetPoints} <span className="text-xs font-normal text-zinc-400">pts</span></p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {uniqueTypes.length > 0 && (
                       <div className="px-4 pb-3 flex flex-wrap gap-1.5">
@@ -1138,4 +1122,43 @@ function MatchCard({
           </button>
 
           {showRivals && rivals && (
-       
+            <div className="pb-3 px-3 space-y-1">
+              {rivals.length === 0 ? (
+                <p className="text-zinc-600 text-xs text-center py-2">Nadie pronosticó este partido</p>
+              ) : (
+                rivals.map((r, i) => (
+                  <div key={r.userId} className={cn(
+                    'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs',
+                    r.userId === currentUserId
+                      ? 'bg-sky-500/10 border border-sky-500/20'
+                      : 'bg-white/3',
+                  )}>
+                    <span className="w-5 flex-shrink-0 text-center">
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-zinc-600">{i + 1}</span>}
+                    </span>
+                    <span className={cn('flex-1 font-medium truncate', r.userId === currentUserId ? 'text-sky-300' : 'text-zinc-300')}>
+                      {r.username}
+                      {r.userId === currentUserId && <span className="text-zinc-500 font-normal ml-1">(vos)</span>}
+                    </span>
+                    <span className="font-mono text-zinc-400 flex-shrink-0">
+                      {r.predictedHomeScore} – {r.predictedAwayScore}
+                    </span>
+                    <span className={cn(
+                      'font-bold flex-shrink-0 w-12 text-right',
+                      r.pointsEarned === 3 && 'text-sky-400',
+                      r.pointsEarned === 2 && 'text-blue-400',
+                      r.pointsEarned === 1 && 'text-amber-400',
+                      r.pointsEarned === 0 && 'text-zinc-600',
+                    )}>
+                      {r.pointsEarned > 0 ? `+${r.pointsEarned}` : '0'} pts
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
