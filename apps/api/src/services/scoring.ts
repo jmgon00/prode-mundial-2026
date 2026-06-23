@@ -6,7 +6,10 @@ export async function scoreMatch(matchId: string, homeScore: number, awayScore: 
   const match = await prisma.match.findUnique({ where: { id: matchId }, select: { stage: true } })
   if (!match) return
 
-  const predictions = await prisma.prediction.findMany({ where: { matchId } })
+  // Solo procesar predicciones que aún no tienen puntos calculados
+  const predictions = await prisma.prediction.findMany({
+    where: { matchId, pointsEarned: null },
+  })
 
   for (const pred of predictions) {
     let points = 0
