@@ -37,6 +37,46 @@ router.get('/league/:leagueId', requireAuth, async (req: AuthRequest, res, next)
   }
 })
 
+// Desglose de puntos por usuario: predicciones vs apuestas locas
+router.get('/league/:leagueId/breakdown', requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const { leagueId } = req.params
+    const userId = req.userId!
+
+    const isMember = await prisma.leagueMember.findUnique({
+      where: { leagueId_userId: { leagueId, userId } },
+    })
+    if (!isMember) throw new AppError(403, 'No sos miembro de esta liga')
+
+    const members = await prisma.leagueMember.findMany({
+      where: { leagueId },
+      include: { user: { select: { id: true, username: true } } },
+    })
+
+    const breakdown = await Promise.all(members.map(async (m) => {
+      const [predPoints, funBetPoints] = await Promise.all([
+        prisma.prediction.aggregate({
+          where: { userId: m.userId, leagueId, pointsEarned: { not: null } },
+          _sum: { pointsEarned: true },
+        }),
+        prisma.funBet.aggregate({
+          where: { userId: m.userId, leagueId, pointsEarned: { gt: 0 } },
+          _sum: { pointsEarned: true },
+        }),
+      ])
+
+      return {
+        userId:           m.userId,
+        username:         m.user.username,
+        predictionPoints: predPoints._sum.pointsEarned ?? 0,
+        funBetPoints:     funBetPoints._sum.pointsEarned ?? 0,
+      }
+    }))
+
+    res.json(breakdown)
+  } catch (err) { next(err) }
+})
+
 // Veredicto final con penitencias asignadas
 router.get('/league/:leagueId/verdict', requireAuth, async (req: AuthRequest, res, next) => {
   try {

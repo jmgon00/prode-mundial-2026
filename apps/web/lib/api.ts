@@ -383,9 +383,18 @@ export const reportsApi = {
 // adminApi.reports()       → GET /api/admin/reports
 // adminApi.resolveReport() → PATCH /api/admin/reports/:id
 
+export interface BreakdownEntry {
+  userId: string
+  username: string
+  predictionPoints: number
+  funBetPoints: number
+}
+
 export const rankingApi = {
   get: (leagueId: string) =>
     api.get<RankingEntry[]>(`/api/rankings/league/${leagueId}`),
   verdict: (leagueId: string) =>
     api.get<{ leagueId: string; verdict: VerdictEntry[] }>(`/api/rankings/league/${leagueId}/verdict`),
+  breakdown: (leagueId: string) =>
+    api.get<BreakdownEntry[]>(`/api/rankings/league/${leagueId}/breakdown`),
 }
