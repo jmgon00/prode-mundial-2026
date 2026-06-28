@@ -59,8 +59,14 @@ router.get('/league/:leagueId/breakdown', requireAuth, async (req: AuthRequest, 
           where: { userId: m.userId, leagueId, pointsEarned: { not: null } },
           _sum: { pointsEarned: true },
         }),
+        // Solo funBets de fase eliminatoria (fase 2)
         prisma.funBet.aggregate({
-          where: { userId: m.userId, leagueId, pointsEarned: { gt: 0 } },
+          where: {
+            userId: m.userId,
+            leagueId,
+            pointsEarned: { gt: 0 },
+            match: { stage: { in: ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL'] } },
+          },
           _sum: { pointsEarned: true },
         }),
       ])
