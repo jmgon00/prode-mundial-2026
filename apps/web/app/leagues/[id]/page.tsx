@@ -141,9 +141,9 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
     } catch { /* silently ignore */ }
   }
 
-  async function savePrediction(matchId: string, home: number, away: number) {
+  async function savePrediction(matchId: string, home: number, away: number, tiebreakWinner?: 'HOME' | 'AWAY' | null) {
     try {
-      const pred = await predictionApi.upsert({ matchId, leagueId: id, predictedHomeScore: home, predictedAwayScore: away })
+      const pred = await predictionApi.upsert({ matchId, leagueId: id, predictedHomeScore: home, predictedAwayScore: away, tiebreakWinner })
       setPredictions((prev) => new Map(prev).set(matchId, pred))
     } catch { /* silently ignore */ }
   }
@@ -825,12 +825,14 @@ function useCountdown(targetDate: string) {
   return state
 }
 
+const ELIMINATION_STAGES = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL']
+
 function MatchCard({
   match, prediction, onSave, leagueId, currentUserId, funBets, categories, onAddFunBet, onRemoveFunBet,
 }: {
   match: Match
   prediction?: Prediction
-  onSave: (matchId: string, home: number, away: number) => void
+  onSave: (matchId: string, home: number, away: number, tiebreakWinner?: 'HOME' | 'AWAY' | null) => void
   leagueId: string
   currentUserId: string
   funBets: FunBet[]
@@ -840,6 +842,8 @@ function MatchCard({
 }) {
   const [home, setHome] = useState(prediction?.predictedHomeScore?.toString() ?? '')
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
+  const [tiebreakWinner, setTiebreakWinner] = useState<'HOME' | 'AWAY' | null>(prediction?.tiebreakWinner ?? null)
+  const isElimination = ELIMINATION_STAGES.includes(match.stage)
   const canPredict = match.status === 'SCHEDULED' && new Date() < new Date(match.matchDate)
   const { label: countdown, urgency } = useCountdown(match.matchDate)
   const [showRivals, setShowRivals] = useState(false)
@@ -892,10 +896,23 @@ function MatchCard({
     finally { setLoadingRivals(false) }
   }
 
+  const isDraw = home !== '' && away !== '' && home === away
+  const needsTiebreak = isElimination && isDraw
+
   function handleBlur() {
     const h = parseInt(home)
     const a = parseInt(away)
-    if (!isNaN(h) && !isNaN(a)) onSave(match.id, h, a)
+    if (!isNaN(h) && !isNaN(a)) {
+      const tb = h === a ? tiebreakWinner : null
+      onSave(match.id, h, a, tb)
+    }
+  }
+
+  function handleTiebreakChange(val: 'HOME' | 'AWAY') {
+    setTiebreakWinner(val)
+    const h = parseInt(home)
+    const a = parseInt(away)
+    if (!isNaN(h) && !isNaN(a)) onSave(match.id, h, a, val)
   }
 
   const pts = prediction?.pointsEarned
@@ -980,6 +997,35 @@ function MatchCard({
             {getFlag(match.awayTeam)} {match.awayTeam}
           </span>
         </div>
+
+        {/* Tiebreak: quién avanza (solo fase eliminatoria + empate predicho) */}
+        {canPredict && needsTiebreak && (
+          <div className="mt-2.5 flex items-center gap-2 justify-center">
+            <p className="text-xs text-amber-400 font-medium">¿Quién avanza?</p>
+            <button
+              onClick={() => handleTiebreakChange('HOME')}
+              className={cn(
+                'text-xs px-2.5 py-1 rounded-lg border transition-all',
+                tiebreakWinner === 'HOME'
+                  ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-semibold'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
+              )}
+            >
+              {match.homeTeam}
+            </button>
+            <button
+              onClick={() => handleTiebreakChange('AWAY')}
+              className={cn(
+                'text-xs px-2.5 py-1 rounded-lg border transition-all',
+                tiebreakWinner === 'AWAY'
+                  ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-semibold'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
+              )}
+            >
+              {match.awayTeam}
+            </button>
+          </div>
+        )}
 
         {/* Resultado del pronóstico */}
         {hasPrediction && match.status === 'FINISHED' && (

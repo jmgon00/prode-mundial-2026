@@ -153,6 +153,7 @@ export interface Prediction {
   leagueId: string
   predictedHomeScore: number
   predictedAwayScore: number
+  tiebreakWinner: 'HOME' | 'AWAY' | null
   pointsEarned: number | null
   match?: Match
 }
@@ -162,6 +163,7 @@ export interface MatchPrediction {
   username: string
   predictedHomeScore: number
   predictedAwayScore: number
+  tiebreakWinner: 'HOME' | 'AWAY' | null
   pointsEarned: number
 }
 
@@ -171,6 +173,7 @@ export const predictionApi = {
     leagueId: string
     predictedHomeScore: number
     predictedAwayScore: number
+    tiebreakWinner?: 'HOME' | 'AWAY' | null
   }) => api.post<Prediction>('/api/predictions', data),
   listByLeague: (leagueId: string) =>
     api.get<Prediction[]>(`/api/predictions/league/${leagueId}`),
@@ -328,6 +331,10 @@ export const adminApi = {
   autoValidate: (matchId: string) =>
     api.post<{ awarded: number; notOccurred: number; skipped: number; errors: string[] }>(
       `/api/admin/funbets/${matchId}/auto-validate`, {}
+    ),
+  activatePhase2: () =>
+    api.post<{ message: string; membersUpdated: number; categoriesAdded: number }>(
+      '/api/admin/phase2/activate', {}
     ),
 }
 

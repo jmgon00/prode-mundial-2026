@@ -519,4 +519,52 @@ router.post('/seed-matches', requireAuth, requireAdmin, async (_req, res, next) 
   }
 })
 
+// Activar Fase 2: resetear puntos (solo predicciones) + agregar categorías fase 2
+router.post('/phase2/activate', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    // 1. Resetear totalPoints = solo puntos de predicciones (eliminar funBet pts)
+    const members = await prisma.leagueMember.findMany({
+      select: { userId: true, leagueId: true },
+    })
+
+    await Promise.all(members.map(async (m) => {
+      const predPts = await prisma.prediction.aggregate({
+        where: { userId: m.userId, leagueId: m.leagueId, pointsEarned: { not: null } },
+        _sum: { pointsEarned: true },
+      })
+      await prisma.leagueMember.updateMany({
+        where: { userId: m.userId, leagueId: m.leagueId },
+        data: { totalPoints: predPts._sum.pointsEarned ?? 0 },
+      })
+    }))
+
+    // 2. Agregar categorías de apuestas locas para fase 2
+    const phase2Categories = [
+      { id: 'fbc-p2-01', description: 'Gol de tiro libre', points: 2 },
+      { id: 'fbc-p2-02', description: 'Gol de penal', points: 2 },
+      { id: 'fbc-p2-03', description: 'Gol de chilena', points: 2 },
+      { id: 'fbc-p2-04', description: '5 tarjetas amarillas en el partido', points: 2 },
+      { id: 'fbc-p2-05', description: '2 expulsados en el partido', points: 2 },
+      { id: 'fbc-p2-06', description: 'Gol anulado por VAR', points: 2 },
+      { id: 'fbc-p2-07', description: 'El partido se define por penales', points: 2 },
+    ]
+
+    for (const cat of phase2Categories) {
+      await prisma.funBetCategory.upsert({
+        where: { id: cat.id },
+        create: cat,
+        update: { description: cat.description, points: cat.points },
+      })
+    }
+
+    res.json({
+      message: 'Fase 2 activada correctamente',
+      membersUpdated: members.length,
+      categoriesAdded: phase2Categories.length,
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

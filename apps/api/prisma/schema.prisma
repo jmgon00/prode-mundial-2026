@@ -112,6 +112,7 @@ model Prediction {
   leagueId           String
   predictedHomeScore Int
   predictedAwayScore Int
+  tiebreakWinner     String?
   pointsEarned       Int?
   loadedByAdmin      Boolean  @default(false)
   createdAt          DateTime @default(now())

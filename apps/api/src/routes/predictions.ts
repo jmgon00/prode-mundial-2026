@@ -6,11 +6,14 @@ import { AppError } from '../middleware/errorHandler'
 
 const router = Router()
 
+const ELIMINATION_STAGES = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL']
+
 const predictionSchema = z.object({
   matchId: z.string().uuid(),
   leagueId: z.string().uuid(),
   predictedHomeScore: z.number().int().min(0),
   predictedAwayScore: z.number().int().min(0),
+  tiebreakWinner: z.enum(['HOME', 'AWAY']).nullable().optional(),
 })
 
 // Crear o actualizar predicción
@@ -24,6 +27,12 @@ router.post('/', requireAuth, async (req: AuthRequest, res, next) => {
     if (match.status !== 'SCHEDULED') throw new AppError(400, 'El partido ya comenzó')
     if (new Date() >= match.matchDate) throw new AppError(400, 'Ya no se pueden cargar predicciones para este partido')
 
+    // En fase eliminatoria, si predice empate debe indicar quién avanza
+    const isDraw = data.predictedHomeScore === data.predictedAwayScore
+    if (ELIMINATION_STAGES.includes(match.stage) && isDraw && !data.tiebreakWinner) {
+      throw new AppError(400, 'En fase eliminatoria debes indicar quién avanza si predecís empate')
+    }
+
     const isMember = await prisma.leagueMember.findUnique({
       where: { leagueId_userId: { leagueId: data.leagueId, userId } },
     })
@@ -31,10 +40,11 @@ router.post('/', requireAuth, async (req: AuthRequest, res, next) => {
 
     const prediction = await prisma.prediction.upsert({
       where: { userId_matchId_leagueId: { userId, matchId: data.matchId, leagueId: data.leagueId } },
-      create: { userId, ...data },
+      create: { userId, ...data, tiebreakWinner: isDraw ? (data.tiebreakWinner ?? null) : null },
       update: {
         predictedHomeScore: data.predictedHomeScore,
         predictedAwayScore: data.predictedAwayScore,
+        tiebreakWinner: isDraw ? (data.tiebreakWinner ?? null) : null,
       },
     })
 

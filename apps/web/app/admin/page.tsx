@@ -308,6 +308,9 @@ export default function AdminPage() {
         {/* Sección: Reportes de usuarios */}
         <ReportsSection />
 
+        {/* Sección: Activar Fase 2 */}
+        <Phase2Section />
+
         {/* Sección: Reset de datos */}
         <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
           <div>
@@ -1191,6 +1194,69 @@ function ReportsSection() {
           ))}
         </div>
       )}
+    </section>
+  )
+}
+
+function Phase2Section() {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ message: string; membersUpdated: number } | null>(null)
+  const [error, setError] = useState('')
+  const [confirmed, setConfirmed] = useState(false)
+
+  async function handleActivate() {
+    if (!confirmed) {
+      setConfirmed(true)
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const res = await adminApi.activatePhase2()
+      setResult(res)
+      setConfirmed(false)
+    } catch (err: any) {
+      setError(err.message ?? 'Error al activar fase 2')
+      setConfirmed(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-4 space-y-3">
+      <div>
+        <h2 className="text-white font-semibold">🏆 Activar Fase 2 — Eliminatorias</h2>
+        <p className="text-xs text-zinc-400 mt-0.5">
+          Resetea los puntos de todos los usuarios a solo sus puntos de predicciones (elimina los de apuestas locas) y agrega las categorías de apuestas locas de fase 2.
+        </p>
+      </div>
+      <div className="bg-zinc-800/50 rounded-lg p-3 space-y-1 text-xs text-zinc-400">
+        <p>• Los puntos de predicciones se mantienen</p>
+        <p>• Los puntos de apuestas locas se eliminan del total</p>
+        <p>• Se agregan 7 nuevas categorías de apuestas locas</p>
+        <p>• Esta acción <span className="text-amber-400 font-semibold">no se puede deshacer</span></p>
+      </div>
+      {result ? (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+          <p className="text-green-400 text-sm font-semibold">✅ {result.message}</p>
+          <p className="text-xs text-zinc-400 mt-0.5">{result.membersUpdated} miembros actualizados</p>
+        </div>
+      ) : (
+        <button
+          onClick={handleActivate}
+          disabled={loading}
+          className={cn(
+            'w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50',
+            confirmed
+              ? 'bg-red-600 hover:bg-red-500 text-white'
+              : 'bg-violet-600 hover:bg-violet-500 text-white'
+          )}
+        >
+          {loading ? 'Activando...' : confirmed ? '⚠️ ¿Confirmar? Esta acción no se puede deshacer' : '🚀 Activar Fase 2'}
+        </button>
+      )}
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </section>
   )
 }
