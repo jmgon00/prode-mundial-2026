@@ -45,9 +45,11 @@ router.post('/', requireAuth, async (req: AuthRequest, res, next) => {
     const category = await prisma.funBetCategory.findUnique({ where: { id: categoryId } })
     if (!category) throw new AppError(404, 'Categoría no encontrada')
 
-    // Máximo 3 apuestas por usuario por partido
+    // Máximo 1 apuesta en eliminatorias, 3 en fase de grupos
+    const ELIMINATION_STAGES = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL']
+    const maxFunBets = ELIMINATION_STAGES.includes(match.stage) ? 1 : 3
     const existing = await prisma.funBet.count({ where: { userId, matchId, leagueId } })
-    if (existing >= 3) throw new AppError(400, 'Ya tenés 3 apuestas en este partido')
+    if (existing >= maxFunBets) throw new AppError(400, `Ya tenés ${maxFunBets} apuesta${maxFunBets > 1 ? 's' : ''} en este partido`)
 
     const funBet = await prisma.funBet.create({
       data: { userId, matchId, leagueId, categoryId },

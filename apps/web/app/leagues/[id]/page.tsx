@@ -844,6 +844,7 @@ function MatchCard({
   const [away, setAway] = useState(prediction?.predictedAwayScore?.toString() ?? '')
   const [tiebreakWinner, setTiebreakWinner] = useState<'HOME' | 'AWAY' | null>(prediction?.tiebreakWinner ?? null)
   const isElimination = ELIMINATION_STAGES.includes(match.stage)
+  const maxFunBets = isElimination ? 1 : 3
   const canPredict = match.status === 'SCHEDULED' && new Date() < new Date(match.matchDate)
   const { label: countdown, urgency } = useCountdown(match.matchDate)
   const [showRivals, setShowRivals] = useState(false)
@@ -1054,9 +1055,9 @@ function MatchCard({
           <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">🎲 Apuestas locas</p>
           <span className={cn(
             'text-xs font-mono px-1.5 py-0.5 rounded-md',
-            funBets.length >= 3 ? 'bg-sky-500/20 text-sky-400' : 'bg-zinc-800 text-zinc-500',
+            funBets.length >= maxFunBets ? 'bg-sky-500/20 text-sky-400' : 'bg-zinc-800 text-zinc-500',
           )}>
-            {funBets.length}/3
+            {funBets.length}/{maxFunBets}
           </span>
         </div>
 
@@ -1082,7 +1083,7 @@ function MatchCard({
         )}
 
         {/* Agregar nueva apuesta */}
-        {canPredict && funBets.length < 3 && categories.length > 0 && (
+        {canPredict && funBets.length < maxFunBets && categories.length > 0 && (
           <div className="space-y-1.5">
             <div className="flex gap-2">
               <select
