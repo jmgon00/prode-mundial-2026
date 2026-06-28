@@ -10,6 +10,7 @@ const router = Router()
 router.get('/categories', async (_req, res, next) => {
   try {
     const categories = await prisma.funBetCategory.findMany({
+      where: { isActive: true },
       orderBy: { id: 'asc' },
       select: { id: true, description: true, points: true },
     })
