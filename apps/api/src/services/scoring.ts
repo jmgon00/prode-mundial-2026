@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma'
 import { Stage } from '@prisma/client'
 import { checkAndAwardBadges, checkWoodenSpoon } from './badges'
 
-const ELIMINATION_STAGES = [
+const ELIMINATION_STAGES: Stage[] = [
   Stage.ROUND_OF_32,
   Stage.ROUND_OF_16,
   Stage.QUARTERFINAL,
