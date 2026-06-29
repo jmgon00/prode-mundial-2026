@@ -391,6 +391,15 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
   const [autoValidating, setAutoValidating] = useState(false)
   const [autoValidateResult, setAutoValidateResult] = useState<{ awarded: number; notOccurred: number; skipped: number; errors: string[] } | null>(null)
   const [categoryLoading, setCategoryLoading] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState(false)
+  // datetime-local value (local Argentina time)
+  const toLocalInput = (iso: string) => {
+    const d = new Date(iso)
+    const offset = -3 * 60 // UTC-3 Argentina
+    const local = new Date(d.getTime() + offset * 60 * 1000)
+    return local.toISOString().slice(0, 16) // YYYY-MM-DDTHH:MM
+  }
+  const [newDateInput, setNewDateInput] = useState(toLocalInput(match.matchDate))
   const [showManualForm, setShowManualForm] = useState(false)
   const [manualUsers, setManualUsers] = useState<{ id: string; username: string }[]>([])
   const [manualLeagues, setManualLeagues] = useState<{ id: string; name: string }[]>([])
@@ -537,10 +546,46 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
     }
   }
 
+  async function handleSaveDate() {
+    setLoading(true)
+    try {
+      // newDateInput is Argentina time (UTC-3) → convert to UTC
+      const arDate = new Date(newDateInput + ':00')
+      const utcDate = new Date(arDate.getTime() + 3 * 60 * 60 * 1000)
+      const updated = await adminApi.setDate(match.id, utcDate.toISOString())
+      onSaved(updated)
+      setEditDate(false)
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="px-4 py-3 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-500">{formatDate(match.matchDate)}</span>
+        {editDate ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="datetime-local"
+              value={newDateInput}
+              onChange={(e) => setNewDateInput(e.target.value)}
+              className="bg-zinc-800 border border-violet-500 rounded-lg px-2 py-0.5 text-xs text-white outline-none"
+            />
+            <button onClick={handleSaveDate} disabled={loading} className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-2 py-0.5 rounded font-medium transition-all">
+              OK
+            </button>
+            <button onClick={() => setEditDate(false)} className="text-xs text-zinc-500 hover:text-zinc-300">✕</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditDate(true)}
+            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline decoration-dotted"
+          >
+            {formatDate(match.matchDate)}
+          </button>
+        )}
         <div className="flex items-center gap-2">
           {isFinished && (
             <div className="flex items-center gap-1.5">

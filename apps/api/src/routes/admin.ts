@@ -191,6 +191,23 @@ router.patch('/matches/:id/teams', requireAuth, requireAdmin, async (req, res, n
   }
 })
 
+// Actualizar fecha/hora de un partido
+router.patch('/matches/:id/date', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { matchDate } = z.object({
+      matchDate: z.string().datetime(),
+    }).parse(req.body)
+
+    const match = await prisma.match.update({
+      where: { id: req.params.id },
+      data: { matchDate: new Date(matchDate) },
+    })
+    res.json(match)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Resetear todos los datos de prueba (mantiene partidos y admin)
 router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) => {
   try {

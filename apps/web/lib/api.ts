@@ -297,6 +297,8 @@ export const adminApi = {
     api.patch<Match>(`/api/admin/matches/${id}/teams`, { homeTeam, awayTeam }),
   setStatus: (id: string, status: 'LIVE' | 'SCHEDULED') =>
     api.patch<Match>(`/api/admin/matches/${id}/status`, { status }),
+  setDate: (id: string, matchDate: string) =>
+    api.patch<Match>(`/api/admin/matches/${id}/date`, { matchDate }),
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
   syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),
   syncNow: () => api.post<SyncResult>('/api/admin/sync-now', {}),
