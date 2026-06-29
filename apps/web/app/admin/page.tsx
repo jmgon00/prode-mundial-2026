@@ -1293,6 +1293,10 @@ s (elimina los de apuestas locas) y agrega las categorías de apuestas locas de 
 function TestPushSection() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [customLoading, setCustomLoading] = useState(false)
+  const [customResult, setCustomResult] = useState<string | null>(null)
 
   async function handleTest() {
     setLoading(true)
@@ -1307,22 +1311,100 @@ function TestPushSection() {
     }
   }
 
+  async function handleCustomSend() {
+    if (!title.trim() || !body.trim()) return
+    setCustomLoading(true)
+    setCustomResult(null)
+    try {
+      const res = await adminApi.sendCustomPush({ title: title.trim(), body: body.trim() })
+      setCustomResult(`✅ ${res.message}`)
+    } catch (err: any) {
+      setCustomResult(`❌ ${err.message}`)
+    } finally {
+      setCustomLoading(false)
+    }
+  }
+
+  const canSend = title.trim().length > 0 && body.trim().length > 0 && !customLoading
+
   return (
-    <section className="bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 space-y-3">
+    <section className="bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 space-y-4">
       <div>
-        <h2 className="text-white font-semibold">🔔 Notificación de prueba</h2>
+        <h2 className="text-white font-semibold">🔔 Notificaciones push</h2>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Enviá una notificación push a todos los usuarios suscritos para verificar que funciona.
+          Enviá mensajes a todos los usuarios suscritos.
         </p>
       </div>
-      <button
-        onClick={handleTest}
-        disabled={loading}
-        className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-sm font-medium py-2 rounded-lg transition-all"
-      >
-        {loading ? 'Enviando...' : '📣 Enviar notificación de prueba'}
-      </button>
-      {result && <p className="text-xs text-zinc-300">{result}</p>}
+
+      {/* Test rápido */}
+      <div className="border border-zinc-700/40 rounded-lg p-3 space-y-2">
+        <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Prueba rápida</p>
+        <button
+          onClick={handleTest}
+          disabled={loading}
+          className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-sm font-medium py-2 rounded-lg transition-all"
+        >
+          {loading ? 'Enviando...' : '📣 Enviar notificación de prueba'}
+        </button>
+        {result && <p className="text-xs text-zinc-300">{result}</p>}
+      </div>
+
+      {/* Notificación manual */}
+      <div className="border border-zinc-700/40 rounded-lg p-3 space-y-3">
+        <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Mensaje personalizado</p>
+
+        <div className="space-y-2">
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs text-zinc-400">Título</label>
+              <span className="text-xs text-zinc-600">{title.length}/60</span>
+            </div>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value.slice(0, 60))}
+              placeholder="Ej: ⚽ Prode Mundial"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-violet-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-1">
+              <label className="text-xs text-zinc-400">Mensaje</label>
+              <span className="text-xs text-zinc-600">{body.length}/120</span>
+            </div>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value.slice(0, 120))}
+              placeholder="Ej: ¡Arrancó la fase de grupos! Hacé tus pronósticos."
+              rows={2}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-violet-500 outline-none resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Preview */}
+        {(title || body) && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 space-y-0.5">
+            <p className="text-xs text-zinc-500 mb-1.5">Vista previa</p>
+            <div className="flex items-start gap-2">
+              <span className="text-lg leading-none">⚽</span>
+              <div>
+                <p className="text-sm font-semibold text-white leading-tight">{title || 'Título...'}</p>
+                <p className="text-xs text-zinc-400 mt-0.5 leading-snug">{body || 'Mensaje...'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleCustomSend}
+          disabled={!canSend}
+          className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-sm font-medium py-2 rounded-lg transition-all"
+        >
+          {customLoading ? 'Enviando...' : '📤 Enviar a todos los suscriptores'}
+        </button>
+        {customResult && <p className="text-xs text-zinc-300">{customResult}</p>}
+      </div>
     </section>
   )
 }

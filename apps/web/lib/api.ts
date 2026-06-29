@@ -340,6 +340,8 @@ export const adminApi = {
     ),
   sendTestPush: () =>
     api.post<{ message: string }>('/api/admin/push/test', {}),
+  sendCustomPush: (data: { title: string; body: string }) =>
+    api.post<{ message: string; count: number }>('/api/admin/push/send', data),
 }
 
 export interface AdminFunBet {

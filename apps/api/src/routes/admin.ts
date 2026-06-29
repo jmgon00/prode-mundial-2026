@@ -600,4 +600,23 @@ router.post('/push/test', requireAuth, requireAdmin, async (_req, res, next) => 
   } catch (err) { next(err) }
 })
 
+// POST /api/admin/push/send — notificación manual personalizada
+const pushSendSchema = z.object({
+  title: z.string().min(1).max(100),
+  body: z.string().min(1).max(200),
+})
+
+router.post('/push/send', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { title, body } = pushSendSchema.parse(req.body)
+
+    const subs = await prisma.pushSubscription.count()
+    if (subs === 0) return res.status(400).json({ message: 'No hay suscriptores activos.' })
+
+    await sendPushToAll({ title, body, tag: `manual-${Date.now()}` })
+
+    res.json({ message: `Notificación enviada a ${subs} suscriptor${subs !== 1 ? 'es' : ''}`, count: subs })
+  } catch (err) { next(err) }
+})
+
 export default router

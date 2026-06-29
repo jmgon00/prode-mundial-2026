@@ -167,9 +167,13 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
 
         if (!wasAlreadyFinished) {
           // Notificación: partido finalizado
+          const winner = homeScore > awayScore ? homeEs : awayScore > homeScore ? awayEs : null
+          const endBody = winner
+            ? `¡Terminó! ${winner} ganó ${homeScore}-${awayScore}`
+            : `¡Terminó! Empate ${homeScore}-${awayScore} entre ${homeEs} y ${awayEs}`
           sendPushToAll({
             title: `⏱️ Fin del partido`,
-            body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+            body: endBody,
             tag: `match-end-${match.id}`,
           }).catch(() => {})
 
@@ -178,12 +182,14 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
           }).catch((e) => console.error('[auto-validate] sync error:', e.message))
         } else {
           // Detectar gol: el score cambió durante el partido (LIVE → FINISHED con gol nuevo)
-          const scoredHome = homeScore !== (prevHome ?? -1)
-          const scoredAway = awayScore !== (prevAway ?? -1)
-          if ((scoredHome || scoredAway) && (prevHome !== null || prevAway !== null)) {
+          const scoredHome = homeScore > (prevHome ?? 0)
+          const scoredAway = awayScore > (prevAway ?? 0)
+          if (scoredHome || scoredAway) {
+            const scoringTeam = scoredHome ? homeEs : awayEs
+            const otherTeam   = scoredHome ? awayEs : homeEs
             sendPushToAll({
-              title: `⚽ Gol!`,
-              body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+              title: `⚽ Prode Mundial`,
+              body: `🔥 ¡Metió ${scoringTeam}! Se pone ${homeScore}-${awayScore} ante ${otherTeam}`,
               tag: `goal-${match.id}-${homeScore}-${awayScore}`,
             }).catch(() => {})
           }
@@ -195,8 +201,8 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
 
         // Notificación: partido arrancando
         sendPushToAll({
-          title: `🚨 Arrancó el partido!`,
-          body: `${homeEs} vs ${awayEs} — ¡ya podés ver los pronósticos!`,
+          title: `🚨 Prode Mundial`,
+          body: `¡Arrancó! ${homeEs} vs ${awayEs}`,
           tag: `match-start-${match.id}`,
         }).catch(() => {})
 
@@ -215,9 +221,10 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
             })
             // Notificar gol
             const scoringTeam = homeScore > prevHome ? homeEs : awayEs
+            const otherTeam   = homeScore > prevHome ? awayEs : homeEs
             sendPushToAll({
-              title: `⚽ GOL de ${scoringTeam}!`,
-              body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+              title: `⚽ Prode Mundial`,
+              body: `🔥 ¡Metió ${scoringTeam}! Se pone ${homeScore}-${awayScore} ante ${otherTeam}`,
               tag: `goal-${match.id}-${homeScore}-${awayScore}`,
             }).catch(() => {})
           }
