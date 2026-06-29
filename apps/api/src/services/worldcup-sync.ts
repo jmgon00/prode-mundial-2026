@@ -124,10 +124,7 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
     const games = await apiFetch<ApiGame>('/get/games', 'games')
     const now = new Date()
 
-    // Solo fase de grupos — los knockout tienen equipos placeholder en nuestra DB
-    const groupGames = games.filter((g) => g.type === 'group')
-
-    for (const game of groupGames) {
+    for (const game of games) {
       const homeEn = game.home_team_name_en
       const awayEn = game.away_team_name_en
 
