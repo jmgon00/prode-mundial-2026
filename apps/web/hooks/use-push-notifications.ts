@@ -24,7 +24,11 @@ export function usePushNotifications() {
   }, [])
 
   async function subscribe() {
-    if (!supported || loading) return
+    if (loading) return
+    if (!supported) {
+      alert('Para recibir notificaciones en iPhone, primero agregá la app a tu pantalla de inicio:\nCompartir → "Agregar a pantalla de inicio" → abrila desde ahí.')
+      return
+    }
     setLoading(true)
     try {
       // 1. Registrar el service worker
