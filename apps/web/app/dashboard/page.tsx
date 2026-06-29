@@ -167,8 +167,8 @@ export default function DashboardPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Próximas 24hs</p>
-              <button onClick={() => router.push('/grupos')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
-                Tabla de grupos →
+              <button onClick={() => router.push('/playoffs')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
+                Cruces →
               </button>
             </div>
             <div className="space-y-1.5">
@@ -197,8 +197,8 @@ export default function DashboardPage() {
           <div className="bg-sky-500/8 border border-sky-500/25 rounded-xl px-4 py-3 space-y-1">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-sky-400 uppercase tracking-wider">Próximo partido</p>
-              <button onClick={() => router.push('/grupos')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
-                Tabla de grupos →
+              <button onClick={() => router.push('/playoffs')} className="text-xs text-sky-400 hover:text-sky-300 transition-colors">
+                Cruces →
               </button>
             </div>
             <p className="font-bold text-white text-sm">
