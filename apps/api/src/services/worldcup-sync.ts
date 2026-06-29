@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { scoreMatch } from './scoring'
 import { autoValidateFunBets } from './auto-validate-funbets'
+import { sendPushToAll } from './push'
 
 const API_BASE = 'https://worldcup26.ir'
 
@@ -155,21 +156,72 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
         if (isNaN(homeScore) || isNaN(awayScore)) continue
 
         const wasAlreadyFinished = match.status === 'FINISHED'
+        const prevHome = match.homeScore
+        const prevAway = match.awayScore
+
         await prisma.match.update({
           where: { id: match.id },
           data: { homeScore, awayScore, status: 'FINISHED' },
         })
         await scoreMatch(match.id, homeScore, awayScore)
-        // Auto-validar solo si no estaba ya finalizado (evitar doble validación)
+
         if (!wasAlreadyFinished) {
+          // Notificación: partido finalizado
+          sendPushToAll({
+            title: `⏱️ Fin del partido`,
+            body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+            tag: `match-end-${match.id}`,
+          }).catch(() => {})
+
           autoValidateFunBets(match.id).then((r) => {
             console.log(`[auto-validate] ${homeEs} vs ${awayEs}: +${r.awarded} awarded, ${r.notOccurred} not occurred, ${r.skipped} especiales`, r.errors.length ? r.errors : '')
           }).catch((e) => console.error('[auto-validate] sync error:', e.message))
+        } else {
+          // Detectar gol: el score cambió durante el partido (LIVE → FINISHED con gol nuevo)
+          const scoredHome = homeScore !== (prevHome ?? -1)
+          const scoredAway = awayScore !== (prevAway ?? -1)
+          if ((scoredHome || scoredAway) && (prevHome !== null || prevAway !== null)) {
+            sendPushToAll({
+              title: `⚽ Gol!`,
+              body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+              tag: `goal-${match.id}-${homeScore}-${awayScore}`,
+            }).catch(() => {})
+          }
         }
+
         result.finished++
       } else if (now >= match.matchDate && match.status === 'SCHEDULED') {
         await prisma.match.update({ where: { id: match.id }, data: { status: 'LIVE' } })
+
+        // Notificación: partido arrancando
+        sendPushToAll({
+          title: `🚨 Arrancó el partido!`,
+          body: `${homeEs} vs ${awayEs} — ¡ya podés ver los pronósticos!`,
+          tag: `match-start-${match.id}`,
+        }).catch(() => {})
+
         result.live++
+      } else if (match.status === 'LIVE') {
+        // Partido en curso: detectar goles comparando score actual con lo guardado
+        const homeScore = Number(game.home_score)
+        const awayScore = Number(game.away_score)
+        if (!isNaN(homeScore) && !isNaN(awayScore)) {
+          const prevHome = match.homeScore ?? 0
+          const prevAway = match.awayScore ?? 0
+          if (homeScore !== prevHome || awayScore !== prevAway) {
+            await prisma.match.update({
+              where: { id: match.id },
+              data: { homeScore, awayScore },
+            })
+            // Notificar gol
+            const scoringTeam = homeScore > prevHome ? homeEs : awayEs
+            sendPushToAll({
+              title: `⚽ GOL de ${scoringTeam}!`,
+              body: `${homeEs} ${homeScore} - ${awayScore} ${awayEs}`,
+              tag: `goal-${match.id}-${homeScore}-${awayScore}`,
+            }).catch(() => {})
+          }
+        }
       }
     }
   } catch (err: any) {

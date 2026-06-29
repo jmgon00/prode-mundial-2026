@@ -16,11 +16,12 @@ model User {
   isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  leagueMemberships LeagueMember[]
-  predictions       Prediction[]
-  badges            Badge[]
-  funBets           FunBet[]
-  reports           Report[]
+  leagueMemberships  LeagueMember[]
+  predictions        Prediction[]
+  badges             Badge[]
+  funBets            FunBet[]
+  reports            Report[]
+  pushSubscriptions  PushSubscription[]
 }
 
 model League {
@@ -169,6 +170,17 @@ enum BadgeType {
   FLAWLESS_GROUP_STAGE
   DARK_HORSE
   WOODEN_SPOON
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Report {

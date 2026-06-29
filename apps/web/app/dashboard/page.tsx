@@ -17,12 +17,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { LogOut, Plus, Users, Trophy, ChevronRight, Hash, ShieldCheck, UserCog, Trash2 } from 'lucide-react'
+import { LogOut, Plus, Users, Trophy, ChevronRight, Hash, ShieldCheck, UserCog, Trash2, Bell, BellOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 
 export default function DashboardPage() {
   const { user, isLoading } = useProtected()
   const { logout } = useAuth()
+  const { supported, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications()
   const router = useRouter()
   const [leagues, setLeagues] = useState<League[]>([])
   const [summary, setSummary] = useState<MatchSummary | null>(null)
@@ -150,6 +152,19 @@ export default function DashboardPage() {
               }
               <span className="font-medium">@{user?.username}</span>
             </button>
+            {supported && (
+              <button
+                onClick={subscribed ? unsubscribe : subscribe}
+                disabled={pushLoading}
+                title={subscribed ? 'Desactivar notificaciones' : 'Activar notificaciones'}
+                className={cn(
+                  'flex items-center gap-1.5 text-xs transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800 disabled:opacity-40',
+                  subscribed ? 'text-amber-400 hover:text-amber-300' : 'text-zinc-500 hover:text-zinc-300',
+                )}
+              >
+                {subscribed ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+              </button>
+            )}
             <button
               onClick={() => { logout(); router.replace('/login') }}
               className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800"
