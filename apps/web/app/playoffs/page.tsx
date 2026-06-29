@@ -8,58 +8,63 @@ import { getFlagUrl } from '@/lib/flags'
 import { ArrowLeft, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// ─── Layout constants ──────────────────────────────────────────────────────────
+const CARD_W  = 158  // px — ancho de cada tarjeta de partido
+const SLOT_H  = 80   // px — alto del "slot" de R32; se duplica cada ronda
+const CONN_W  = 36   // px — ancho de la columna conector entre rondas
+const LINE    = '#52525b' // zinc-600
+
 const STAGES = [
-  { key: 'ROUND_OF_32',  label: 'Ronda de 32', short: 'R32' },
-  { key: 'ROUND_OF_16',  label: 'Octavos',     short: 'Octavos' },
-  { key: 'QUARTERFINAL', label: 'Cuartos',      short: 'Cuartos' },
-  { key: 'SEMIFINAL',    label: 'Semifinal',    short: 'Semis' },
-  { key: 'FINAL',        label: 'Final',        short: 'Final' },
+  { key: 'ROUND_OF_32',  label: '16avos',  count: 16 },
+  { key: 'ROUND_OF_16',  label: 'Octavos', count: 8  },
+  { key: 'QUARTERFINAL', label: 'Cuartos', count: 4  },
+  { key: 'SEMIFINAL',    label: 'Semis',   count: 2  },
+  { key: 'FINAL',        label: 'Final',   count: 1  },
 ]
 
-function FlagImg({ team, size = 20 }: { team: string; size?: number }) {
+// ─── Flag image ────────────────────────────────────────────────────────────────
+function Flag({ team }: { team: string }) {
   const url = getFlagUrl(team)
-  if (!url) return <span className="inline-block rounded-sm bg-zinc-700" style={{ width: size, height: Math.round(size * 0.67) }} />
+  if (!url) return <span className="inline-block w-[18px] h-[13px] rounded-sm bg-zinc-700 flex-shrink-0" />
   return (
     <img
       src={url}
       alt={team}
-      width={size}
-      height={Math.round(size * 0.67)}
+      width={18}
+      height={13}
       className="rounded-sm object-cover flex-shrink-0"
-      style={{ width: size, height: Math.round(size * 0.67) }}
+      style={{ width: 18, height: 13 }}
     />
   )
 }
 
-function TeamRow({
-  name, score, isWinner, isPending,
-}: {
-  name: string
-  score: number | null
-  isWinner: boolean
-  isPending: boolean
+// ─── Single team row inside a card ────────────────────────────────────────────
+function TeamRow({ name, score, winner, pending }: {
+  name: string; score: number | null; winner: boolean; pending: boolean
 }) {
   return (
     <div className={cn(
-      'flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg',
-      !isPending && isWinner  && 'bg-gradient-to-r from-amber-500/15 to-transparent',
-      !isPending && !isWinner && 'opacity-60',
-      isPending               && 'bg-zinc-800/50',
+      'flex items-center justify-between gap-2 px-2.5 py-[7px]',
+      winner && !pending && 'bg-gradient-to-r from-amber-500/12 to-transparent',
     )}>
       <div className="flex items-center gap-2 min-w-0">
-        <FlagImg team={name} size={18} />
+        {name
+          ? <Flag team={name} />
+          : <span className="inline-block w-[18px] h-[13px] rounded-sm bg-zinc-800 flex-shrink-0" />
+        }
         <span className={cn(
-          'text-[11px] leading-tight truncate',
-          isWinner && !isPending ? 'text-white font-bold' : 'text-zinc-300',
-          isPending && 'text-zinc-500 font-normal',
+          'text-[11px] truncate leading-tight',
+          pending              ? 'text-zinc-600'  :
+          winner               ? 'text-white font-bold' :
+                                 'text-zinc-500',
         )}>
-          {name || <span className="text-zinc-600 italic">Por definir</span>}
+          {name || <span className="italic">Por definir</span>}
         </span>
       </div>
-      {score !== null && !isPending && (
+      {score !== null && !pending && (
         <span className={cn(
-          'text-xs font-black flex-shrink-0 tabular-nums',
-          isWinner ? 'text-amber-400' : 'text-zinc-500',
+          'text-[11px] font-black tabular-nums flex-shrink-0',
+          winner ? 'text-amber-400' : 'text-zinc-600',
         )}>
           {score}
         </span>
@@ -68,74 +73,89 @@ function TeamRow({
   )
 }
 
-function MatchCard({ match }: { match: Match }) {
+// ─── Match card ───────────────────────────────────────────────────────────────
+function MatchCard({ match }: { match: Match | null }) {
+  if (!match) {
+    return (
+      <div
+        style={{ width: CARD_W }}
+        className="h-[62px] rounded-xl border border-dashed border-zinc-800/50 flex items-center justify-center"
+      >
+        <span className="text-zinc-800 text-[10px]">TBD</span>
+      </div>
+    )
+  }
+
   const finished  = match.status === 'FINISHED'
   const live      = match.status === 'LIVE'
-  const isPending = !finished && !live
-  const homeWins  = finished && match.homeScore !== null && match.awayScore !== null && match.homeScore > match.awayScore
-  const awayWins  = finished && match.homeScore !== null && match.awayScore !== null && match.awayScore > match.homeScore
+  const pending   = !finished && !live
+  const homeWin   = finished && match.homeScore! > match.awayScore!
+  const awayWin   = finished && match.awayScore! > match.homeScore!
 
   return (
-    <div className={cn(
-      'rounded-xl border overflow-hidden flex-shrink-0 w-[156px]',
-      live     ? 'border-green-500/50 shadow-[0_0_12px_rgba(34,197,94,0.15)]' :
-      finished ? 'border-zinc-700/60' :
-                 'border-zinc-800/60 bg-zinc-900/40',
+    <div style={{ width: CARD_W }} className={cn(
+      'rounded-xl border overflow-hidden',
+      live     ? 'border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.18)]' :
+      finished ? 'border-zinc-700/60'  :
+                 'border-zinc-800/40',
     )}>
       {live && (
-        <div className="bg-green-500/20 px-2.5 py-0.5 flex items-center gap-1">
-          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-          <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest">En vivo</span>
+        <div className="bg-green-500/15 flex items-center gap-1.5 px-2.5 py-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">En vivo</span>
         </div>
       )}
-      <div className="p-1.5 space-y-0.5 bg-zinc-900">
-        <TeamRow name={match.homeTeam} score={match.homeScore} isWinner={homeWins} isPending={isPending} />
-        <div className="border-t border-zinc-800/60 mx-1" />
-        <TeamRow name={match.awayTeam} score={match.awayScore} isWinner={awayWins} isPending={isPending} />
+      <div className="bg-zinc-900/90">
+        <TeamRow name={match.homeTeam} score={match.homeScore} winner={homeWin} pending={pending} />
+        <div className="border-t border-zinc-800/60 mx-2" />
+        <TeamRow name={match.awayTeam} score={match.awayScore} winner={awayWin} pending={pending} />
       </div>
     </div>
   )
 }
 
-function EmptySlot() {
-  return (
-    <div className="w-[156px] flex-shrink-0 rounded-xl border border-dashed border-zinc-800/60 bg-zinc-900/20 p-3 flex items-center justify-center">
-      <span className="text-zinc-700 text-[10px]">Por definir</span>
-    </div>
-  )
-}
-
-function StageColumn({ label, short, matches, expectedCount }: {
-  label: string
-  short: string
-  matches: Match[]
-  expectedCount: number
-}) {
-  const slots = [...matches]
-  while (slots.length < expectedCount) slots.push(null as any)
+// ─── SVG connector column between two rounds ──────────────────────────────────
+// fromCount = number of matches in the left stage
+// slotH     = slot height of the LEFT stage
+function BracketConnector({ fromCount, slotH }: { fromCount: number; slotH: number }) {
+  const totalH  = fromCount * slotH
+  const pairs   = fromCount / 2
 
   return (
-    <div className="flex flex-col gap-3 flex-shrink-0">
-      {/* Stage header */}
-      <div className="text-center px-1 pb-1 border-b border-zinc-800">
-        <p className="text-[11px] font-black text-white uppercase tracking-widest">{short}</p>
-        <p className="text-[9px] text-zinc-600 mt-0.5">{label}</p>
-      </div>
+    <svg
+      width={CONN_W}
+      height={totalH}
+      className="flex-shrink-0"
+      style={{ display: 'block' }}
+    >
+      {Array.from({ length: pairs }).map((_, i) => {
+        const topY = i * slotH * 2 + slotH / 2   // center of upper match
+        const botY = topY + slotH                  // center of lower match
+        const midY = (topY + botY) / 2             // midpoint → next round center
+        const vx   = CONN_W * 0.45                 // x of vertical bar
 
-      {/* Matches */}
-      <div className="flex flex-col justify-around gap-4 flex-1">
-        {slots.map((m, i) =>
-          m ? <MatchCard key={m.id} match={m} /> : <EmptySlot key={`empty-${i}`} />
-        )}
-      </div>
-    </div>
+        return (
+          <g key={i}>
+            {/* Horizontal from upper match center-right */}
+            <line x1={0}    y1={topY} x2={vx}     y2={topY} stroke={LINE} strokeWidth={1.5} strokeLinecap="round" />
+            {/* Vertical bar connecting the two */}
+            <line x1={vx}   y1={topY} x2={vx}     y2={botY} stroke={LINE} strokeWidth={1.5} strokeLinecap="round" />
+            {/* Horizontal from lower match center-right */}
+            <line x1={0}    y1={botY} x2={vx}     y2={botY} stroke={LINE} strokeWidth={1.5} strokeLinecap="round" />
+            {/* Horizontal going right to next round */}
+            <line x1={vx}   y1={midY} x2={CONN_W} y2={midY} stroke={LINE} strokeWidth={1.5} strokeLinecap="round" />
+          </g>
+        )
+      })}
+    </svg>
   )
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function PlayoffsPage() {
   const { isLoading } = useProtected()
   const router = useRouter()
-  const [matches, setMatches] = useState<Match[]>([])
+  const [allMatches, setAllMatches] = useState<Match[]>([])
   const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
@@ -145,21 +165,22 @@ export default function PlayoffsPage() {
         matchApi.list({ stage })
       )
     )
-      .then((results) => setMatches(results.flat()))
+      .then((res) => setAllMatches(res.flat()))
       .catch(() => {})
       .finally(() => setFetching(false))
   }, [isLoading])
 
-  const byStage = (stage: string) =>
-    matches
-      .filter((m) => m.stage === stage)
+  const byStage = (key: string): (Match | null)[] => {
+    const ms = allMatches
+      .filter((m) => m.stage === key)
       .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
-
-  const thirdPlace = matches.find((m) => m.stage === 'THIRD_PLACE')
-
-  const EXPECTED: Record<string, number> = {
-    ROUND_OF_32: 16, ROUND_OF_16: 8, QUARTERFINAL: 4, SEMIFINAL: 2, FINAL: 1,
+    const stage = STAGES.find((s) => s.key === key)
+    const slots: (Match | null)[] = [...ms]
+    while (slots.length < (stage?.count ?? 0)) slots.push(null)
+    return slots
   }
+
+  const thirdPlace = allMatches.find((m) => m.stage === 'THIRD_PLACE')
 
   if (isLoading || fetching) {
     return (
@@ -171,12 +192,13 @@ export default function PlayoffsPage() {
 
   return (
     <div className="min-h-screen bg-stadium">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-zinc-950/95 backdrop-blur-md border-b border-white/8">
-        <div className="px-4 py-4 flex items-center gap-3">
+
+      {/* ── Header ── */}
+      <div className="sticky top-0 z-10 bg-zinc-950/96 backdrop-blur-md border-b border-white/8">
+        <div className="px-4 py-3.5 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-1.5 rounded-lg bg-zinc-800/60 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-zinc-800/70 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -185,36 +207,80 @@ export default function PlayoffsPage() {
               <Trophy className="h-4 w-4 text-amber-400" />
             </div>
             <div>
-              <h1 className="text-white font-black text-base leading-tight tracking-tight">
-                Eliminatorias
+              <h1 className="text-white font-black text-[15px] leading-tight tracking-tight">
+                Cuadro de Eliminatorias
               </h1>
-              <p className="text-zinc-500 text-[11px]">Mundial 2026 · Bracket</p>
+              <p className="text-zinc-500 text-[10px] mt-0.5">Mundial 2026</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bracket */}
-      <div className="overflow-x-auto">
-        <div className="flex gap-5 px-4 pt-6 pb-4 min-w-max items-start">
-          {STAGES.map((s) => (
-            <StageColumn
-              key={s.key}
-              label={s.label}
-              short={s.short}
-              matches={byStage(s.key)}
-              expectedCount={EXPECTED[s.key] ?? 1}
-            />
-          ))}
+      {/* ── Bracket ── */}
+      <div className="overflow-x-auto overflow-y-auto">
+        <div className="px-4 pt-5 pb-8 min-w-max">
+
+          {/* Stage labels row */}
+          <div className="flex items-center mb-4 gap-0">
+            {STAGES.map((s, si) => (
+              <div key={s.key} className="flex items-center gap-0">
+                <div style={{ width: CARD_W }} className="text-center">
+                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.14em]">
+                    {s.label}
+                  </span>
+                </div>
+                {si < STAGES.length - 1 && (
+                  <div style={{ width: CONN_W }} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Match + connector row */}
+          <div className="flex items-start gap-0">
+            {STAGES.map((stage, si) => {
+              const slotH   = SLOT_H * Math.pow(2, si)
+              const totalH  = stage.count * slotH
+              const slots   = byStage(stage.key)
+              const isLast  = si === STAGES.length - 1
+
+              return (
+                <div key={stage.key} className="flex items-start gap-0 flex-shrink-0">
+                  {/* Match column */}
+                  <div style={{ width: CARD_W, height: totalH }} className="flex flex-col flex-shrink-0">
+                    {slots.map((m, i) => (
+                      <div
+                        key={m?.id ?? `empty-${stage.key}-${i}`}
+                        style={{ height: slotH }}
+                        className="flex items-center"
+                      >
+                        <MatchCard match={m} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Connector to next round */}
+                  {!isLast && stage.count > 1 && (
+                    <BracketConnector fromCount={stage.count} slotH={slotH} />
+                  )}
+                  {/* Last stage: no connector */}
+                  {!isLast && stage.count === 1 && (
+                    <div style={{ width: CONN_W }} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
         </div>
       </div>
 
-      {/* Tercer puesto */}
+      {/* ── 3er puesto ── */}
       {thirdPlace && (
-        <div className="px-4 pb-8">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="px-4 pb-10">
+          <div className="flex items-center gap-3 mb-3">
             <div className="h-px flex-1 bg-zinc-800" />
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-2">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
               🥉 Tercer Puesto
             </span>
             <div className="h-px flex-1 bg-zinc-800" />
@@ -224,6 +290,7 @@ export default function PlayoffsPage() {
           </div>
         </div>
       )}
+
     </div>
   )
 }
