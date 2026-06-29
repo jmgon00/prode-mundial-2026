@@ -85,7 +85,8 @@ const EN_TO_ES: Record<string, string> = {
   'panama': 'Panamá',
 }
 
-function resolveEsName(nameEn: string): string | null {
+function resolveEsName(nameEn: string | undefined | null): string | null {
+  if (!nameEn) return null
   return EN_TO_ES[nameEn.toLowerCase().trim()] ?? null
 }
 
