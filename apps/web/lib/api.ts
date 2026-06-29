@@ -90,6 +90,7 @@ export const leagueApi = {
   get: (id: string) => api.get<League>(`/api/leagues/${id}`),
   leave: (id: string) =>
     api.post<{ message: string }>(`/api/leagues/${id}/leave`, {}),
+  delete: (id: string) => api.delete<{ message: string }>(`/api/leagues/${id}`),
   addPenalty: (leagueId: string, data: { description: string; position: number; type: 'REWARD' | 'PENALTY' }) =>
     api.post<Penalty>(`/api/leagues/${leagueId}/penalties`, data),
   deletePenalty: (leagueId: string, penaltyId: string) =>

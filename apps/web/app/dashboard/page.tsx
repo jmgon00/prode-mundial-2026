@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { LogOut, Plus, Users, Trophy, ChevronRight, Hash, ShieldCheck, UserCog } from 'lucide-react'
+import { LogOut, Plus, Users, Trophy, ChevronRight, Hash, ShieldCheck, UserCog, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
@@ -76,6 +76,16 @@ export default function DashboardPage() {
       setCreateError(err.message)
     } finally {
       setCreateLoading(false)
+    }
+  }
+
+  async function handleDeleteLeague(leagueId: string, leagueName: string) {
+    if (!confirm(`¿Eliminar la liga "${leagueName}"? Esta acción no se puede deshacer.`)) return
+    try {
+      await leagueApi.delete(leagueId)
+      setLeagues((prev) => prev.filter((l) => l.id !== leagueId))
+    } catch (err: any) {
+      alert(err.message)
     }
   }
 
@@ -234,11 +244,11 @@ export default function DashboardPage() {
               const myRank = (league.members?.filter((m) => m.totalPoints > myPoints).length ?? 0) + 1
               const memberCount = league.members?.length ?? 0
               return (
-                <button
-                  key={league.id}
-                  onClick={() => router.push(`/leagues/${league.id}`)}
-                  className="w-full bg-white/8 border border-white/12 hover:border-sky-500/40 rounded-2xl p-5 flex flex-col gap-3 transition-all active:scale-[0.97] text-left group hover:shadow-lg hover:shadow-sky-900/20 backdrop-blur-sm"
-                >
+                <div key={league.id} className="relative group/card">
+                  <button
+                    onClick={() => router.push(`/leagues/${league.id}`)}
+                    className="w-full bg-white/8 border border-white/12 hover:border-sky-500/40 rounded-2xl p-5 flex flex-col gap-3 transition-all active:scale-[0.97] text-left group hover:shadow-lg hover:shadow-sky-900/20 backdrop-blur-sm"
+                  >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-bold text-white text-base leading-tight">{league.name}</p>
                     <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-sky-400 transition-colors flex-shrink-0 mt-0.5" />
@@ -264,7 +274,18 @@ export default function DashboardPage() {
                       {memberCount}
                     </span>
                   </div>
-                </button>
+                  </button>
+                  {/* Botón eliminar — solo para el owner */}
+                  {league.ownerId === user!.id && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteLeague(league.id, league.name) }}
+                      className="absolute top-3 right-10 opacity-0 group-hover/card:opacity-100 transition-opacity p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400"
+                      title="Eliminar liga"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               )
             })}
           </div>

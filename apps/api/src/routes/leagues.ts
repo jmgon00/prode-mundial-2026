@@ -176,4 +176,21 @@ router.post('/:id/leave', requireAuth, async (req: AuthRequest, res, next) => {
   }
 })
 
+// Eliminar liga (solo el owner)
+router.delete('/:id', requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const userId = req.userId!
+    const league = await prisma.league.findUnique({ where: { id: req.params.id } })
+    if (!league) throw new AppError(404, 'Liga no encontrada')
+    if (league.ownerId !== userId) throw new AppError(403, 'Solo el organizador puede eliminar la liga')
+
+    // Cascade delete está configurado en el schema (onDelete: Cascade)
+    await prisma.league.delete({ where: { id: req.params.id } })
+
+    res.json({ message: 'Liga eliminada' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
