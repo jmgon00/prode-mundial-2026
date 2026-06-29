@@ -9,6 +9,7 @@ import { syncWorldCupResults, lastSync } from '../services/worldcup-sync'
 import { autoValidateFunBets } from '../services/auto-validate-funbets'
 import { env } from '../config/env'
 import bcrypt from 'bcryptjs'
+import { sendPushToAll } from '../services/push'
 
 const router = Router()
 
@@ -581,6 +582,22 @@ router.post('/phase2/activate', requireAuth, requireAdmin, async (req, res, next
   } catch (err) {
     next(err)
   }
+})
+
+// POST /api/admin/push/test — notificación de prueba
+router.post('/push/test', requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const subs = await prisma.pushSubscription.count()
+    if (subs === 0) return res.status(400).json({ message: 'No hay suscriptores. Activá las notificaciones primero desde el 🔔 en el dashboard.' })
+
+    await sendPushToAll({
+      title: '⚽ Prode Mundial 2026',
+      body: '¡Las notificaciones están funcionando! Te avisaremos de goles y partidos.',
+      tag: 'test-notification',
+    })
+
+    res.json({ message: `Notificación enviada a ${subs} suscriptor${subs !== 1 ? 'es' : ''}` })
+  } catch (err) { next(err) }
 })
 
 export default router

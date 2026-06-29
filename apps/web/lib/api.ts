@@ -338,6 +338,8 @@ export const adminApi = {
     api.post<{ message: string; membersUpdated: number; categoriesAdded: number }>(
       '/api/admin/phase2/activate', {}
     ),
+  sendTestPush: () =>
+    api.post<{ message: string }>('/api/admin/push/test', {}),
 }
 
 export interface AdminFunBet {

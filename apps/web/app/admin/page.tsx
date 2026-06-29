@@ -311,6 +311,9 @@ export default function AdminPage() {
         {/* Sección: Activar Fase 2 */}
         <Phase2Section />
 
+        {/* Sección: Notificación de prueba */}
+        <TestPushSection />
+
         {/* Sección: Reset de datos */}
         <section className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
           <div>
@@ -1253,7 +1256,8 @@ function Phase2Section() {
       <div>
         <h2 className="text-white font-semibold">🏆 Activar Fase 2 — Eliminatorias</h2>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Resetea los puntos de todos los usuarios a solo sus puntos de predicciones (elimina los de apuestas locas) y agrega las categorías de apuestas locas de fase 2.
+          Resetea los puntos de todos los usuarios a solo sus puntos de prediccion
+s (elimina los de apuestas locas) y agrega las categorías de apuestas locas de fase 2.
         </p>
       </div>
       <div className="bg-zinc-800/50 rounded-lg p-3 space-y-1 text-xs text-zinc-400">
@@ -1282,6 +1286,43 @@ function Phase2Section() {
         </button>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
+    </section>
+  )
+}
+
+function TestPushSection() {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  async function handleTest() {
+    setLoading(true)
+    setResult(null)
+    try {
+      const res = await adminApi.sendTestPush()
+      setResult(`✅ ${res.message}`)
+    } catch (err: any) {
+      setResult(`❌ ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 space-y-3">
+      <div>
+        <h2 className="text-white font-semibold">🔔 Notificación de prueba</h2>
+        <p className="text-xs text-zinc-400 mt-0.5">
+          Enviá una notificación push a todos los usuarios suscritos para verificar que funciona.
+        </p>
+      </div>
+      <button
+        onClick={handleTest}
+        disabled={loading}
+        className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-sm font-medium py-2 rounded-lg transition-all"
+      >
+        {loading ? 'Enviando...' : '📣 Enviar notificación de prueba'}
+      </button>
+      {result && <p className="text-xs text-zinc-300">{result}</p>}
     </section>
   )
 }
