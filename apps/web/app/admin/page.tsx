@@ -899,7 +899,7 @@ function UserRow({ user, expanded, onToggle }: {
 }
 
 function RetroactivePredictionSection() {
-  const [matches, setMatches] = useState<{ id: string; homeTeam: string; awayTeam: string; status: string; homeScore: number | null; awayScore: number | null }[]>([])
+  const [matches, setMatches] = useState<{ id: string; homeTeam: string; awayTeam: string; stage: string; status: string; homeScore: number | null; awayScore: number | null }[]>([])
   const [users, setUsers]     = useState<{ id: string; username: string }[]>([])
   const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(false)
@@ -910,11 +910,12 @@ function RetroactivePredictionSection() {
   const [leagueId, setLeagueId] = useState('')
   const [homeScore, setHomeScore] = useState('')
   const [awayScore, setAwayScore] = useState('')
+  const [tiebreakWinner, setTiebreakWinner] = useState<'HOME' | 'AWAY' | ''>('')
+
+  const ELIMINATION_STAGES = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL', 'THIRD_PLACE', 'FINAL']
 
   useEffect(() => {
-    adminApi.matches().then((all) =>
-      setMatches(all.filter((m) => m.status === 'LIVE' || m.status === 'FINISHED'))
-    ).catch(() => {})
+    adminApi.matches().then((all) => setMatches(all)).catch(() => {})
     adminApi.users().then(setUsers).catch(() => {})
     adminApi.allLeagues().then(setLeagues).catch(() => {})
   }, [])
@@ -929,10 +930,11 @@ function RetroactivePredictionSection() {
         matchId, userId, leagueId,
         predictedHomeScore: Number(homeScore),
         predictedAwayScore: Number(awayScore),
+        tiebreakWinner: tiebreakWinner || null,
       })
       const pts = res.pointsAwarded ?? res.pointsEarned
       setResult({ ok: true, msg: pts != null ? `✅ Cargado. Puntos otorgados: ${pts}` : '✅ Pronóstico cargado (se puntuará cuando termine el partido)' })
-      setMatchId(''); setUserId(''); setLeagueId(''); setHomeScore(''); setAwayScore('')
+      setMatchId(''); setUserId(''); setLeagueId(''); setHomeScore(''); setAwayScore(''); setTiebreakWinner('')
     } catch (err: any) {
       setResult({ ok: false, msg: `❌ ${err.message}` })
     } finally { setLoading(false) }
@@ -945,7 +947,7 @@ function RetroactivePredictionSection() {
       <div>
         <h2 className="text-white font-semibold">Pronóstico retroactivo</h2>
         <p className="text-xs text-zinc-400 mt-0.5">
-          Cargá un pronóstico para un usuario que no pudo hacerlo a tiempo (solo partidos EN VIVO o FINALIZADOS).
+          Cargá un pronóstico para un usuario que no pudo hacerlo a tiempo. Funciona para cualquier estado de partido.
         </p>
       </div>
 
@@ -962,7 +964,11 @@ function RetroactivePredictionSection() {
             {matches.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.homeTeam} vs {m.awayTeam}
-                {m.status === 'FINISHED' && m.homeScore !== null ? ` (${m.homeScore}-${m.awayScore} FIN)` : ' (EN VIVO)'}
+                {m.status === 'FINISHED' && m.homeScore !== null
+                  ? ` (${m.homeScore}-${m.awayScore} FIN)`
+                  : m.status === 'LIVE'
+                  ? ' (EN VIVO)'
+                  : ' (PROGRAMADO)'}
               </option>
             ))}
           </select>
@@ -1024,6 +1030,25 @@ function RetroactivePredictionSection() {
             />
           </div>
         </div>
+
+        {/* Tiebreak: solo en eliminatorias con empate */}
+        {selectedMatch && ELIMINATION_STAGES.includes(selectedMatch.stage ?? '') && homeScore !== '' && awayScore !== '' && Number(homeScore) === Number(awayScore) && (
+          <div className="space-y-1">
+            <label className="text-xs text-zinc-400">¿Quién avanza? (empate en 90min)</label>
+            <div className="flex gap-2">
+              {(['HOME', 'AWAY'] as const).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  onClick={() => setTiebreakWinner(tiebreakWinner === side ? '' : side)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${tiebreakWinner === side ? 'bg-sky-500/20 border-sky-500 text-sky-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}
+                >
+                  {side === 'HOME' ? selectedMatch.homeTeam : selectedMatch.awayTeam}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {selectedMatch?.status === 'FINISHED' && selectedMatch.homeScore !== null && (
           <p className="text-xs text-zinc-500">

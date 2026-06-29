@@ -54,13 +54,14 @@ router.post('/', requireAuth, async (req: AuthRequest, res, next) => {
   }
 })
 
-// Admin: cargar pronóstico retroactivo para un usuario (partidos LIVE o FINISHED)
+// Admin: cargar pronóstico retroactivo para un usuario (cualquier estado de partido)
 const adminLoadSchema = z.object({
   matchId:            z.string().uuid(),
   userId:             z.string().uuid(),
   leagueId:           z.string().uuid(),
   predictedHomeScore: z.number().int().min(0),
   predictedAwayScore: z.number().int().min(0),
+  tiebreakWinner:     z.enum(['HOME', 'AWAY']).nullable().optional(),
 })
 
 router.post('/admin-load', requireAuth, async (req: AuthRequest, res, next) => {
@@ -72,7 +73,6 @@ router.post('/admin-load', requireAuth, async (req: AuthRequest, res, next) => {
 
     const match = await prisma.match.findUnique({ where: { id: data.matchId } })
     if (!match) throw new AppError(404, 'Partido no encontrado')
-    if (match.status === 'SCHEDULED') throw new AppError(400, 'El partido aún no comenzó')
 
     const existing = await prisma.prediction.findUnique({
       where: { userId_matchId_leagueId: { userId: data.userId, matchId: data.matchId, leagueId: data.leagueId } },
@@ -84,6 +84,8 @@ router.post('/admin-load', requireAuth, async (req: AuthRequest, res, next) => {
     })
     if (!isMember) throw new AppError(403, 'El usuario no es miembro de esta liga')
 
+    const isElimination = ELIMINATION_STAGES.includes(match.stage as any)
+
     const prediction = await prisma.prediction.create({
       data: {
         userId:             data.userId,
@@ -91,6 +93,7 @@ router.post('/admin-load', requireAuth, async (req: AuthRequest, res, next) => {
         leagueId:           data.leagueId,
         predictedHomeScore: data.predictedHomeScore,
         predictedAwayScore: data.predictedAwayScore,
+        tiebreakWinner:     data.tiebreakWinner ?? null,
         loadedByAdmin:      true,
       },
     })
@@ -98,15 +101,40 @@ router.post('/admin-load', requireAuth, async (req: AuthRequest, res, next) => {
     // Si el partido ya terminó con scores, calcular puntos inmediatamente
     if (match.status === 'FINISHED' && match.homeScore !== null && match.awayScore !== null) {
       let points = 0
-      const actualResult = Math.sign(match.homeScore - match.awayScore)
-      const predResult   = Math.sign(data.predictedHomeScore - data.predictedAwayScore)
+      const actualHome = match.homeScore
+      const actualAway = match.awayScore
+      const predHome   = data.predictedHomeScore
+      const predAway   = data.predictedAwayScore
+      const actualResult = Math.sign(actualHome - actualAway)
+      const predResult   = Math.sign(predHome - predAway)
 
-      if (data.predictedHomeScore === match.homeScore && data.predictedAwayScore === match.awayScore) {
-        points = 3
-      } else if (predResult === actualResult && Math.abs(data.predictedHomeScore - data.predictedAwayScore) === Math.abs(match.homeScore - match.awayScore)) {
-        points = 2
-      } else if (predResult === actualResult) {
-        points = 1
+      if (isElimination) {
+        const exactScore  = predHome === actualHome && predAway === actualAway
+        const isDraw      = predResult === 0
+        const actualIsDraw = actualResult === 0
+        const actualWinner = actualHome > actualAway ? 'HOME' : actualHome < actualAway ? 'AWAY' : null
+
+        if (isDraw && actualIsDraw) {
+          // Empate en 90min: marcador exacto → 6, tiebreak correcto → 6, tiebreak incorrecto/ausente → 3
+          if (exactScore) {
+            const tieCorrect = data.tiebreakWinner && data.tiebreakWinner === actualWinner
+            points = tieCorrect ? 6 : 3
+          } else {
+            points = 3
+          }
+        } else if (!isDraw && !actualIsDraw && predResult === actualResult) {
+          points = exactScore ? 6 : 3
+        } else {
+          points = 0
+        }
+      } else {
+        if (predHome === actualHome && predAway === actualAway) {
+          points = 3
+        } else if (predResult === actualResult && Math.abs(predHome - predAway) === Math.abs(actualHome - actualAway)) {
+          points = 2
+        } else if (predResult === actualResult) {
+          points = 1
+        }
       }
 
       const updated = await prisma.prediction.update({

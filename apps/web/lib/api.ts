@@ -325,6 +325,7 @@ export const adminApi = {
   loadPredictionForUser: (data: {
     matchId: string; userId: string; leagueId: string
     predictedHomeScore: number; predictedAwayScore: number
+    tiebreakWinner?: 'HOME' | 'AWAY' | null
   }) => api.post<{ id: string; pointsEarned?: number | null; pointsAwarded?: number; loadedByAdmin: boolean }>(
     '/api/predictions/admin-load', data
   ),
