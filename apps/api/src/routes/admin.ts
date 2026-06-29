@@ -239,26 +239,33 @@ router.post('/funbets/award-category', requireAuth, requireAdmin, async (req, re
       return res.json({ message: 'No hay apuestas pendientes para esta categoría', updated: 0 })
     }
 
-    const pts = occurred ? category.points : 0
+    const pts = occurred ? category.points : -1
 
     await prisma.$transaction([
       prisma.funBet.updateMany({
         where: { matchId, categoryId, pointsEarned: null },
         data: { pointsEarned: pts },
       }),
-      // Si ocurrió, sumar puntos a cada usuario en su liga
-      ...(occurred ? funBets.map((fb) =>
-        prisma.leagueMember.updateMany({
-          where: { leagueId: fb.leagueId, userId: fb.userId },
-          data: { totalPoints: { increment: pts } },
-        })
-      ) : []),
+      // Sumar (o descontar) puntos a cada usuario en su liga
+      // Si no ocurrió: decrementar 1, pero sin bajar de 0
+      ...funBets.map((fb) =>
+        occurred
+          ? prisma.leagueMember.updateMany({
+              where: { leagueId: fb.leagueId, userId: fb.userId },
+              data: { totalPoints: { increment: pts } },
+            })
+          : prisma.$executeRaw`
+              UPDATE "LeagueMember"
+              SET "totalPoints" = GREATEST(0, "totalPoints" - 1)
+              WHERE "leagueId" = ${fb.leagueId} AND "userId" = ${fb.userId}
+            `
+      ),
     ])
 
     res.json({
       message: occurred
         ? `+${pts} pts otorgados a ${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''}`
-        : `${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''} descartada${funBets.length !== 1 ? 's' : ''} (no ocurrió)`,
+        : `-1 pt descontado a ${funBets.length} apuesta${funBets.length !== 1 ? 's' : ''} (no ocurrió)`,
       updated: funBets.length,
       occurred,
       pts,
@@ -284,15 +291,24 @@ router.post('/funbets/revert-category', requireAuth, requireAdmin, async (req, r
     }
 
     await prisma.$transaction([
-      // Descontar puntos a quienes habían ganado (pointsEarned > 0)
-      ...funBets
-        .filter((fb) => (fb.pointsEarned ?? 0) > 0)
-        .map((fb) =>
-          prisma.leagueMember.updateMany({
+      // Revertir efecto en totalPoints según lo que se había aplicado
+      ...funBets.map((fb) => {
+        const pe = fb.pointsEarned ?? 0
+        if (pe > 0) {
+          // Habían ganado puntos → descontar
+          return prisma.leagueMember.updateMany({
             where: { leagueId: fb.leagueId, userId: fb.userId },
-            data: { totalPoints: { decrement: fb.pointsEarned! } },
+            data: { totalPoints: { decrement: pe } },
           })
-        ),
+        } else if (pe < 0) {
+          // Habían perdido 1 punto → devolver (sin superar ningún techo, simplemente +1)
+          return prisma.leagueMember.updateMany({
+            where: { leagueId: fb.leagueId, userId: fb.userId },
+            data: { totalPoints: { increment: 1 } },
+          })
+        }
+        return prisma.$executeRaw`SELECT 1` // pointsEarned = 0, no hay nada que revertir
+      }),
       // Resetear todas a null
       prisma.funBet.updateMany({
         where: { matchId, categoryId },
