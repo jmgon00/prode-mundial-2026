@@ -54,9 +54,9 @@ function TeamRow({ name, score, winner, pending }: {
         }
         <span className={cn(
           'text-[11px] truncate leading-tight',
-          pending              ? 'text-zinc-600'  :
-          winner               ? 'text-white font-bold' :
-                                 'text-zinc-500',
+          pending ? 'text-zinc-500'       :
+          winner  ? 'text-white font-bold' :
+                    'text-zinc-400',
         )}>
           {name || <span className="italic">Por definir</span>}
         </span>
@@ -79,9 +79,9 @@ function MatchCard({ match }: { match: Match | null }) {
     return (
       <div
         style={{ width: CARD_W }}
-        className="h-[62px] rounded-xl border border-dashed border-zinc-800/50 flex items-center justify-center"
+        className="h-[62px] rounded-xl border border-dashed border-zinc-600/40 bg-zinc-800/30 flex items-center justify-center shadow"
       >
-        <span className="text-zinc-800 text-[10px]">TBD</span>
+        <span className="text-zinc-600 text-[10px]">Por definir</span>
       </div>
     )
   }
@@ -94,20 +94,20 @@ function MatchCard({ match }: { match: Match | null }) {
 
   return (
     <div style={{ width: CARD_W }} className={cn(
-      'rounded-xl border overflow-hidden',
-      live     ? 'border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.18)]' :
-      finished ? 'border-zinc-700/60'  :
-                 'border-zinc-800/40',
+      'rounded-xl border overflow-hidden shadow-lg',
+      live     ? 'border-green-400/60 shadow-green-900/30' :
+      finished ? 'border-zinc-600/70 shadow-black/40'      :
+                 'border-zinc-600/40 shadow-black/30',
     )}>
       {live && (
-        <div className="bg-green-500/15 flex items-center gap-1.5 px-2.5 py-0.5">
+        <div className="bg-green-500/20 flex items-center gap-1.5 px-2.5 py-0.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">En vivo</span>
         </div>
       )}
-      <div className="bg-zinc-900/90">
+      <div className="bg-zinc-800">
         <TeamRow name={match.homeTeam} score={match.homeScore} winner={homeWin} pending={pending} />
-        <div className="border-t border-zinc-800/60 mx-2" />
+        <div className="border-t border-zinc-700/80 mx-2" />
         <TeamRow name={match.awayTeam} score={match.awayScore} winner={awayWin} pending={pending} />
       </div>
     </div>
@@ -191,7 +191,10 @@ export default function PlayoffsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stadium">
+    <div className="min-h-screen bg-stadium relative">
+      {/* overlay para oscurecer el fondo tornasolado y dar contraste a las cards */}
+      <div className="fixed inset-0 bg-zinc-950/60 pointer-events-none z-0" />
+      <div className="relative z-10">
 
       {/* ── Header ── */}
       <div className="sticky top-0 z-10 bg-zinc-950/96 backdrop-blur-md border-b border-white/8">
@@ -291,6 +294,7 @@ export default function PlayoffsPage() {
         </div>
       )}
 
+      </div> {/* end z-10 */}
     </div>
   )
 }
