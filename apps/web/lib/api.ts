@@ -108,6 +108,7 @@ export interface Match {
   homeScore: number | null
   awayScore: number | null
   status: 'SCHEDULED' | 'LIVE' | 'FINISHED'
+  bracketSlot: number | null
 }
 
 export interface MatchSummary {

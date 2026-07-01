@@ -129,9 +129,13 @@ export async function syncWorldCupResults(): Promise<SyncResult> {
       const homeEn = game.home_team_name_en
       const awayEn = game.away_team_name_en
 
+      // Si la API aún no tiene los equipos definidos, salteamos silenciosamente
+      if (!homeEn || !awayEn) continue
+
       const homeEs = resolveEsName(homeEn)
       const awayEs = resolveEsName(awayEn)
       if (!homeEs || !awayEs) {
+        // Solo loguear si ambos equipos están definidos pero no tenemos mapeo
         result.errors.push(`Sin mapeo para: "${homeEn}" / "${awayEn}"`)
         continue
       }

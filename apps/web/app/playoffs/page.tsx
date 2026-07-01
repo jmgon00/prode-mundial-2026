@@ -173,7 +173,15 @@ export default function PlayoffsPage() {
   const byStage = (key: string): (Match | null)[] => {
     const ms = allMatches
       .filter((m) => m.stage === key)
-      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
+      .sort((a, b) => {
+        // Si ambos tienen bracketSlot, ordenar por él
+        if (a.bracketSlot != null && b.bracketSlot != null) return a.bracketSlot - b.bracketSlot
+        // Si solo uno tiene bracketSlot, ese va primero
+        if (a.bracketSlot != null) return -1
+        if (b.bracketSlot != null) return 1
+        // Fallback: por fecha
+        return new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime()
+      })
     const stage = STAGES.find((s) => s.key === key)
     const slots: (Match | null)[] = [...ms]
     while (slots.length < (stage?.count ?? 0)) slots.push(null)

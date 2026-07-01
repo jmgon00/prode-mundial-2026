@@ -80,11 +80,12 @@ model Match {
   group     String?
   homeTeam  String
   awayTeam  String
-  matchDate DateTime
-  homeScore Int?
-  awayScore Int?
-  status    MatchStatus @default(SCHEDULED)
-  isActive  Boolean     @default(false)
+  matchDate    DateTime
+  homeScore    Int?
+  awayScore    Int?
+  status       MatchStatus @default(SCHEDULED)
+  isActive     Boolean     @default(false)
+  bracketSlot  Int?        // posición en el bracket visual (1-16 para ROUND_OF_32, etc.)
 
   predictions Prediction[]
   funBets     FunBet[]

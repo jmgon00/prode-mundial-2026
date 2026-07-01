@@ -259,7 +259,7 @@ export default function AdminPage() {
             <div>
               <h2 className="text-white font-semibold">Sincronización automática</h2>
               <p className="text-zinc-500 text-xs mt-0.5">
-                Trae resultados en tiempo real desde worldcup26.ir · Se ejecuta cada 3 min (solo fase de grupos)
+                Trae resultados en tiempo real desde worldcup26.ir · Se ejecuta cada 3 min
               </p>
             </div>
             <button

@@ -208,6 +208,23 @@ router.patch('/matches/:id/date', requireAuth, requireAdmin, async (req, res, ne
   }
 })
 
+// Actualizar bracketSlot de un partido
+router.patch('/matches/:id/bracket-slot', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { bracketSlot } = z.object({
+      bracketSlot: z.number().int().min(1),
+    }).parse(req.body)
+
+    const match = await prisma.match.update({
+      where: { id: req.params.id },
+      data: { bracketSlot },
+    })
+    res.json(match)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Resetear todos los datos de prueba (mantiene partidos y admin)
 router.post('/reset-data', requireAuth, requireAdmin, async (_req, res, next) => {
   try {
