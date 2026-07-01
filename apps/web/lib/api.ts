@@ -301,7 +301,7 @@ export const adminApi = {
     api.patch<Match>(`/api/admin/matches/${id}/status`, { status }),
   setDate: (id: string, matchDate: string) =>
     api.patch<Match>(`/api/admin/matches/${id}/date`, { matchDate }),
-  advanceWinner: (matchId: string, data: { winner: string; nextMatchId: string; role: 'HOME' | 'AWAY' }) =>
+  advanceWinner: (matchId: string, data: { winner: string; nextMatchId?: string; role?: 'HOME' | 'AWAY' }) =>
     api.post<{ message: string; nextMatch: Match }>(`/api/admin/matches/${matchId}/advance`, data),
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
   syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),

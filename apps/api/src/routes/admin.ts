@@ -213,8 +213,8 @@ router.post('/matches/:id/advance', requireAuth, requireAdmin, async (req, res, 
   try {
     const { winner, nextMatchId, role } = z.object({
       winner: z.string().min(1),
-      nextMatchId: z.string().min(1),
-      role: z.enum(['HOME', 'AWAY']),
+      nextMatchId: z.string().optional(),
+      role: z.enum(['HOME', 'AWAY']).optional(),
     }).parse(req.body)
 
     const match = await prisma.match.findUnique({ where: { id: req.params.id } })
@@ -225,10 +225,41 @@ router.post('/matches/:id/advance', requireAuth, requireAdmin, async (req, res, 
       await prisma.match.update({ where: { id: req.params.id }, data: { penaltyWinner: winner } })
     }
 
+    // Auto-detectar partido destino y rol si no se proveen (requiere bracketSlot)
+    let targetMatchId = nextMatchId
+    let targetRole = role
+
+    if (!targetMatchId) {
+      if (!match.bracketSlot) {
+        return res.status(400).json({ message: 'Este partido no tiene bracketSlot asignado. Asignalo primero desde el panel de administración.' })
+      }
+      const NEXT_STAGE: Record<string, string> = {
+        ROUND_OF_32: 'ROUND_OF_16', ROUND_OF_16: 'QUARTERFINAL',
+        QUARTERFINAL: 'SEMIFINAL', SEMIFINAL: 'FINAL',
+      }
+      const nextStage = NEXT_STAGE[match.stage]
+      if (!nextStage) return res.status(400).json({ message: 'No hay siguiente instancia para este partido' })
+
+      const nextBracketSlot = Math.ceil(match.bracketSlot / 2)
+      targetRole = match.bracketSlot % 2 === 1 ? 'HOME' : 'AWAY'
+
+      const autoNextMatch = await prisma.match.findFirst({
+        where: { stage: nextStage as Stage, bracketSlot: nextBracketSlot }
+      })
+      if (!autoNextMatch) {
+        return res.status(404).json({ message: `No se encontró el partido de ${nextStage} con bracketSlot ${nextBracketSlot}. Asigná los bracketSlots de la siguiente ronda primero.` })
+      }
+      targetMatchId = autoNextMatch.id
+    }
+
+    if (!targetMatchId || !targetRole) {
+      return res.status(400).json({ message: 'Especificá el partido destino y el rol' })
+    }
+
     // Actualizar el equipo en el próximo partido
     const nextMatch = await prisma.match.update({
-      where: { id: nextMatchId },
-      data: role === 'HOME' ? { homeTeam: winner } : { awayTeam: winner },
+      where: { id: targetMatchId },
+      data: targetRole === 'HOME' ? { homeTeam: winner } : { awayTeam: winner },
     })
 
     res.json({ message: `${winner} avanzó correctamente`, nextMatch })
