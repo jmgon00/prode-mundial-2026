@@ -546,6 +546,52 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
     }
   }
 
+  const ELIMINATION_STAGES_ADV = ['ROUND_OF_32', 'ROUND_OF_16', 'QUARTERFINAL', 'SEMIFINAL']
+  const NEXT_STAGE: Record<string, string> = {
+    ROUND_OF_32: 'ROUND_OF_16', ROUND_OF_16: 'QUARTERFINAL',
+    QUARTERFINAL: 'SEMIFINAL', SEMIFINAL: 'FINAL',
+  }
+  const [showAdvance, setShowAdvance] = useState(false)
+  const [advNextMatches, setAdvNextMatches] = useState<Match[]>([])
+  const [advNextMatchId, setAdvNextMatchId] = useState('')
+  const [advRole, setAdvRole] = useState<'HOME' | 'AWAY'>('HOME')
+  const [advWinner, setAdvWinner] = useState(() => {
+    if (match.homeScore !== null && match.awayScore !== null) {
+      if (match.homeScore > match.awayScore) return match.homeTeam
+      if (match.awayScore > match.homeScore) return match.awayTeam
+    }
+    return match.penaltyWinner ?? match.homeTeam
+  })
+  const [advLoading, setAdvLoading] = useState(false)
+  const [advMsg, setAdvMsg] = useState<string | null>(null)
+
+  async function openAdvance() {
+    if (!showAdvance && advNextMatches.length === 0) {
+      try {
+        const all = await adminApi.matches()
+        const nextStage = NEXT_STAGE[match.stage]
+        setAdvNextMatches(all.filter(m => m.stage === nextStage))
+        if (all.find(m => m.stage === nextStage)) {
+          setAdvNextMatchId(all.filter(m => m.stage === nextStage)[0]?.id ?? '')
+        }
+      } catch (err: any) { alert(err.message); return }
+    }
+    setShowAdvance(v => !v)
+  }
+
+  async function handleAdvance() {
+    if (!advNextMatchId || !advWinner) return
+    setAdvLoading(true)
+    setAdvMsg(null)
+    try {
+      const res = await adminApi.advanceWinner(match.id, { winner: advWinner, nextMatchId: advNextMatchId, role: advRole })
+      setAdvMsg(`✅ ${res.message}`)
+      setShowAdvance(false)
+    } catch (err: any) {
+      setAdvMsg(`❌ ${err.message}`)
+    } finally { setAdvLoading(false) }
+  }
+
   async function handleSaveDate() {
     setLoading(true)
     try {
@@ -845,6 +891,75 @@ function MatchResultRow({ match, onSaved }: { match: Match; onSaved: (m: Match) 
                   </button>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Avanzar ganador ── solo para eliminatorias FINISHED */}
+      {isFinished && ELIMINATION_STAGES_ADV.includes(match.stage) && (
+        <div className="border-t border-zinc-700/40 pt-2 mt-1">
+          <button
+            onClick={openAdvance}
+            className="text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+          >
+            ▶ {showAdvance ? 'Cancelar avance' : 'Avanzar ganador →'}
+          </button>
+
+          {showAdvance && (
+            <div className="mt-2 border border-emerald-500/20 rounded-xl p-3 bg-emerald-500/5 space-y-2">
+              {/* Quién avanza */}
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">¿Quién avanza?</p>
+                <div className="flex gap-2">
+                  {[match.homeTeam, match.awayTeam].map(team => (
+                    <button
+                      key={team}
+                      onClick={() => setAdvWinner(team)}
+                      className={`text-xs px-3 py-1 rounded-lg font-medium transition-all ${advWinner === team ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                    >
+                      {team}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Partido destino */}
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Partido destino</p>
+                <select
+                  value={advNextMatchId}
+                  onChange={e => setAdvNextMatchId(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-500"
+                >
+                  {advNextMatches.map(m => (
+                    <option key={m.id} value={m.id}>{m.homeTeam} vs {m.awayTeam}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Como local o visitante */}
+              <div className="flex gap-2">
+                {(['HOME', 'AWAY'] as const).map(role => (
+                  <button
+                    key={role}
+                    onClick={() => setAdvRole(role)}
+                    className={`text-xs px-3 py-1 rounded-lg font-medium transition-all ${advRole === role ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-white'}`}
+                  >
+                    {role === 'HOME' ? '🏠 Local' : '✈️ Visitante'}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleAdvance}
+                disabled={advLoading || !advNextMatchId}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-semibold py-1.5 rounded-lg transition-all"
+              >
+                {advLoading ? 'Guardando...' : `Confirmar: ${advWinner} → ${advRole === 'HOME' ? 'local' : 'visitante'}`}
+              </button>
+
+              {advMsg && <p className="text-xs text-zinc-300">{advMsg}</p>}
             </div>
           )}
         </div>

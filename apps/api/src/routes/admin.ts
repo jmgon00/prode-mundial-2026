@@ -208,6 +208,33 @@ router.patch('/matches/:id/date', requireAuth, requireAdmin, async (req, res, ne
   }
 })
 
+// Avanzar ganador de un partido a la siguiente instancia
+router.post('/matches/:id/advance', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const { winner, nextMatchId, role } = z.object({
+      winner: z.string().min(1),
+      nextMatchId: z.string().min(1),
+      role: z.enum(['HOME', 'AWAY']),
+    }).parse(req.body)
+
+    const match = await prisma.match.findUnique({ where: { id: req.params.id } })
+    if (!match) return res.status(404).json({ message: 'Partido no encontrado' })
+
+    // Guardar penaltyWinner si el partido terminó empatado
+    if (match.homeScore !== null && match.awayScore !== null && match.homeScore === match.awayScore) {
+      await prisma.match.update({ where: { id: req.params.id }, data: { penaltyWinner: winner } })
+    }
+
+    // Actualizar el equipo en el próximo partido
+    const nextMatch = await prisma.match.update({
+      where: { id: nextMatchId },
+      data: role === 'HOME' ? { homeTeam: winner } : { awayTeam: winner },
+    })
+
+    res.json({ message: `${winner} avanzó correctamente`, nextMatch })
+  } catch (err) { next(err) }
+})
+
 // Actualizar bracketSlot de un partido
 router.patch('/matches/:id/bracket-slot', requireAuth, requireAdmin, async (req, res, next) => {
   try {

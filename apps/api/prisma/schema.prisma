@@ -85,7 +85,8 @@ model Match {
   awayScore    Int?
   status       MatchStatus @default(SCHEDULED)
   isActive     Boolean     @default(false)
-  bracketSlot  Int?        // posición en el bracket visual (1-16 para ROUND_OF_32, etc.)
+  bracketSlot   Int?    // posición en el bracket visual
+  penaltyWinner String? // equipo que ganó por penales (cuando el marcador queda igualado)
 
   predictions Prediction[]
   funBets     FunBet[]

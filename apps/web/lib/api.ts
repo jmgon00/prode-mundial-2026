@@ -109,6 +109,7 @@ export interface Match {
   awayScore: number | null
   status: 'SCHEDULED' | 'LIVE' | 'FINISHED'
   bracketSlot: number | null
+  penaltyWinner: string | null
 }
 
 export interface MatchSummary {
@@ -300,6 +301,8 @@ export const adminApi = {
     api.patch<Match>(`/api/admin/matches/${id}/status`, { status }),
   setDate: (id: string, matchDate: string) =>
     api.patch<Match>(`/api/admin/matches/${id}/date`, { matchDate }),
+  advanceWinner: (matchId: string, data: { winner: string; nextMatchId: string; role: 'HOME' | 'AWAY' }) =>
+    api.post<{ message: string; nextMatch: Match }>(`/api/admin/matches/${matchId}/advance`, data),
   resetData: () => api.post<{ message: string }>('/api/admin/reset-data', {}),
   syncStatus: () => api.get<SyncResult | null>('/api/admin/sync-status'),
   syncNow: () => api.post<SyncResult>('/api/admin/sync-now', {}),
