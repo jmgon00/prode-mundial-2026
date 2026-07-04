@@ -262,6 +262,20 @@ router.post('/matches/:id/advance', requireAuth, requireAdmin, async (req, res, 
       data: targetRole === 'HOME' ? { homeTeam: winner } : { awayTeam: winner },
     })
 
+    // Si es semifinal: también mandar al perdedor al partido de 3er puesto
+    if (match.stage === 'SEMIFINAL') {
+      const loser = winner === match.homeTeam ? match.awayTeam! : match.homeTeam
+      const thirdPlace = await prisma.match.findFirst({ where: { stage: 'THIRD_PLACE' } })
+      if (thirdPlace) {
+        // SF bracketSlot 1 → local del 3er puesto, SF bracketSlot 2 → visitante
+        const thirdRole = match.bracketSlot === 1 ? 'HOME' : 'AWAY'
+        await prisma.match.update({
+          where: { id: thirdPlace.id },
+          data: thirdRole === 'HOME' ? { homeTeam: loser } : { awayTeam: loser },
+        })
+      }
+    }
+
     res.json({ message: `${winner} avanzó correctamente`, nextMatch })
   } catch (err) { next(err) }
 })
