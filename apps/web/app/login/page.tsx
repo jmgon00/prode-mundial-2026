@@ -5,16 +5,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 import { authApi } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { WorldCupLogo } from '@/components/WorldCupLogo'
+import { Mail, Lock, Eye, EyeOff, User, ShieldCheck } from 'lucide-react'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -34,83 +33,249 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Fondo con patrón sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.18_0.04_220)_0%,_oklch(0.09_0_0)_70%)]" />
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvc3ZnPg==')] opacity-60" />
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ backgroundColor: '#0B0F14' }}
+    >
+      {/* ── Fondo estadio ── */}
+      <div className="absolute inset-0" style={{
+        background: `
+          radial-gradient(ellipse 55% 45% at 12% 30%, rgba(23,148,255,0.10) 0%, transparent 60%),
+          radial-gradient(ellipse 55% 45% at 88% 30%, rgba(23,148,255,0.10) 0%, transparent 60%),
+          radial-gradient(ellipse 90% 45% at 50% 105%, rgba(0,35,0,0.55) 0%, transparent 60%),
+          linear-gradient(180deg, #0B0F14 0%, #0d1219 55%, #090d09 100%)
+        `
+      }} />
 
-      <div className="relative w-full max-w-sm space-y-8">
-        {/* Logo */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center drop-shadow-[0_0_18px_rgba(234,179,8,0.4)]">
-            <WorldCupLogo size={96} />
+      {/* Luz de foco izquierda */}
+      <div className="absolute pointer-events-none" style={{
+        top: 0, left: '-10%', width: '50%', height: '60%',
+        background: 'radial-gradient(ellipse at top left, rgba(190,215,255,0.07) 0%, transparent 65%)',
+        transform: 'rotate(-12deg)',
+      }} />
+      {/* Luz de foco derecha */}
+      <div className="absolute pointer-events-none" style={{
+        top: 0, right: '-10%', width: '50%', height: '60%',
+        background: 'radial-gradient(ellipse at top right, rgba(190,215,255,0.07) 0%, transparent 65%)',
+        transform: 'rotate(12deg)',
+      }} />
+      {/* Césped inferior */}
+      <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none" style={{
+        background: 'linear-gradient(0deg, rgba(0,28,0,0.35) 0%, transparent 100%)'
+      }} />
+
+      {/* ── Contenido ── */}
+      <div className="relative w-full max-w-sm space-y-6">
+
+        {/* Logo + Título */}
+        <div className="text-center space-y-3">
+          <div className="flex justify-center" style={{
+            filter: 'drop-shadow(0 0 28px rgba(212,175,55,0.55)) drop-shadow(0 0 10px rgba(212,175,55,0.25))'
+          }}>
+            <WorldCupLogo size={90} />
           </div>
-          <div>
-            <h1 className="text-4xl font-black uppercase tracking-[0.12em] text-white leading-none">
+
+          <div className="space-y-1.5">
+            <h1
+              className="text-[2.55rem] font-black uppercase leading-none text-white"
+              style={{ letterSpacing: '0.09em', textShadow: '0 2px 30px rgba(255,255,255,0.06)' }}
+            >
               Prode Mundial
             </h1>
-            <p className="text-amber-400 font-bold text-lg tracking-[0.35em] uppercase mt-2">
-              2026
+
+            {/* 2026 con líneas decorativas */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-px w-14" style={{ background: 'linear-gradient(90deg, transparent, #D4AF37)' }} />
+              <span className="font-bold text-lg tracking-[0.35em]" style={{ color: '#D4AF37' }}>2026</span>
+              <div className="h-px w-14" style={{ background: 'linear-gradient(270deg, transparent, #D4AF37)' }} />
+            </div>
+
+            <p className="text-xs font-medium tracking-[0.18em] uppercase" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Jugá. Pronosticá. Competí.
             </p>
           </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Ingresar</h2>
-            <p className="text-sm text-zinc-400 mt-0.5">Accedé a tus ligas y pronósticos</p>
+        {/* ── Card ── */}
+        <div style={{
+          background: 'rgba(20,23,29,0.88)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(212,175,55,0.30)',
+          borderRadius: '20px',
+          padding: '28px 24px 22px',
+          boxShadow: '0 0 0 1px rgba(212,175,55,0.04), 0 30px 60px rgba(0,0,0,0.55), 0 0 100px rgba(212,175,55,0.03)',
+        }}>
+
+          <div className="mb-5">
+            <h2 className="text-xl font-bold" style={{ color: '#D4AF37' }}>Ingresar</h2>
+            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.38)' }}>
+              Accedé a tus ligas y pronósticos
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+
+            {/* Email */}
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-zinc-300 text-sm">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="vos@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="bg-zinc-800/60 border-zinc-700 focus:border-sky-500 focus:ring-sky-500/20 text-white placeholder:text-zinc-500 h-11"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-zinc-300 text-sm">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="bg-zinc-800/60 border-zinc-700 focus:border-sky-500 focus:ring-sky-500/20 text-white placeholder:text-zinc-500 h-11"
-              />
+              <label className="text-xs font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Email
+              </label>
+              <div className="relative">
+                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgba(255,255,255,0.28)' }} />
+                <input
+                  type="email"
+                  placeholder="vos@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full text-sm text-white placeholder:text-zinc-600 outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '10px',
+                    padding: '11px 14px 11px 38px',
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'rgba(23,148,255,0.55)'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(23,148,255,0.10)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255,255,255,0.08)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+              </div>
             </div>
 
+            {/* Contraseña */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgba(255,255,255,0.28)' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full text-sm text-white placeholder:text-zinc-600 outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '10px',
+                    padding: '11px 42px 11px 38px',
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'rgba(23,148,255,0.55)'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(23,148,255,0.10)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255,255,255,0.08)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.28)' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.28)')}
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-                <p className="text-sm text-red-400">{error}</p>
+              <div style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.22)',
+                borderRadius: '8px',
+                padding: '9px 12px',
+              }}>
+                <p className="text-xs" style={{ color: '#f87171' }}>{error}</p>
               </div>
             )}
 
-            <Button
+            {/* Botón Ingresar */}
+            <button
               type="submit"
-              className="w-full h-11 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-lg shadow-sky-900/40 transition-all"
               disabled={loading}
+              className="w-full font-bold text-sm text-white transition-all"
+              style={{
+                background: loading ? 'rgba(23,148,255,0.45)' : '#1794FF',
+                borderRadius: '10px',
+                padding: '12px',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : '0 4px 22px rgba(23,148,255,0.38)',
+                letterSpacing: '0.025em',
+              }}
+              onMouseEnter={e => {
+                if (!loading) {
+                  e.currentTarget.style.background = '#3da8ff'
+                  e.currentTarget.style.boxShadow = '0 6px 30px rgba(23,148,255,0.52)'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!loading) {
+                  e.currentTarget.style.background = '#1794FF'
+                  e.currentTarget.style.boxShadow = '0 4px 22px rgba(23,148,255,0.38)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }
+              }}
             >
               {loading ? 'Ingresando...' : 'Ingresar'}
-            </Button>
+            </button>
           </form>
 
-          <p className="text-center text-sm text-zinc-500">
-            ¿No tenés cuenta?{' '}
-            <Link href="/register" className="text-sky-400 hover:text-sky-300 font-medium transition-colors">
+          {/* Divisor */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>o</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+          </div>
+
+          {/* Botón Registrate */}
+          <Link href="/register" className="block">
+            <button
+              className="w-full font-bold text-sm transition-all flex items-center justify-center gap-2"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(212,175,55,0.38)',
+                borderRadius: '10px',
+                padding: '11px',
+                cursor: 'pointer',
+                color: '#D4AF37',
+                letterSpacing: '0.025em',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(212,175,55,0.07)'
+                e.currentTarget.style.borderColor = 'rgba(212,175,55,0.65)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.borderColor = 'rgba(212,175,55,0.38)'
+              }}
+            >
+              <User size={14} />
               Registrate
-            </Link>
-          </p>
+            </button>
+          </Link>
+
+          {/* Footer */}
+          <div className="flex items-center justify-center gap-1.5 mt-4">
+            <ShieldCheck size={11} style={{ color: 'rgba(255,255,255,0.18)' }} />
+            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.18)' }}>Tus datos están protegidos</span>
+          </div>
         </div>
       </div>
     </div>
